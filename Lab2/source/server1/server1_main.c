@@ -15,10 +15,10 @@ char *prog_name;
 void serverError(int);
 int long_output = 1;
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	socklen_t address_length;
-	char c, car[1], nome_file[50], buf[4];
+	char c, nome_file[50], *buf;
 	int i, bar1, bar2, server_socket_figlio;
 	unsigned long int uli[1];
 	FILE *file;
@@ -74,13 +74,16 @@ int main(int argc, char *argv[])
 		while (1)
 		{
 			//ricezione G E T ' '
+			buf = malloc(4 * sizeof(char));
 			if (recv(server_socket_figlio, buf, 4, 0) <= 0)
 			{
+				free(buf);
 				printf("- CONNESSIONE CHIUSA -\n");
 				break;
 			}
 			if (strcmp(buf, "GET ") == 0)
 			{
+				free(buf);
 				if (long_output)
 					printf("PASS GET' ' ricevuto\n");
 				i = 0;
@@ -91,7 +94,11 @@ int main(int argc, char *argv[])
 					if (nome_file[i] == '\0')
 						break;
 					else
+					{
 						i++;
+						if (i == 50)
+							serverError(8);
+					}
 				}
 				if (long_output)
 					printf("PASS nome file ricevuto\n");
@@ -134,11 +141,12 @@ int main(int argc, char *argv[])
 							//scansione-invio file
 							bar1 = uli[0] / 10;
 							bar2 = 0;
+							buf = malloc(sizeof(char));
 							for (i = 0; i < uli[0]; i++)
 							{
 								fflush(stdout);
-								fscanf(file, "%c", &car[0]);
-								send(server_socket_figlio, car, 1, MSG_NOSIGNAL);
+								fscanf(file, "%c", buf);
+								send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
 								//barra di aggiornamento
 								if (i == bar2)
 								{
@@ -146,6 +154,7 @@ int main(int argc, char *argv[])
 									bar2 += bar1;
 								}
 							}
+							free(buf);
 							fclose(file);
 							printf(" -\n");
 							if (long_output)
@@ -196,6 +205,10 @@ void serverError(int codice_errore)
 		exit(-1);
 	case 7:
 		printf("File non aperto correttamente\n");
+		printf("Terminazione server\n");
+		exit(-1);
+	case 8:
+		printf("Nome file sfora 50 caratteri\n");
 		printf("Terminazione server\n");
 		exit(-1);
 
