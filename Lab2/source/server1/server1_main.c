@@ -140,8 +140,13 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						printf("PASS file aperto\n");
 					//invio + O K
 					send(server_socket_figlio, "+OK", 3, MSG_NOSIGNAL);
+					buf = malloc(sizeof(char));
+					buf[0] = 13;
+					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
+					buf[0] = 10;
+					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
 					if (long_output)
-						printf("PASS + O K inviato\n");
+						printf("PASS +OK CR LF inviato\n");
 					//conteggio dimensione
 					uli[0] = 0;
 					while (fscanf(file, "%c", &c) != EOF)
