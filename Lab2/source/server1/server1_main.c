@@ -16,6 +16,8 @@
 char *prog_name;
 
 void serverError(int);
+void serverSendErr(int);
+
 int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
@@ -100,7 +102,10 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					{
 						i++;
 						if (i == 50)
+						{
+							serverSendErr(server_socket_figlio);
 							serverError(8);
+						}
 					}
 				}
 				if (long_output)
@@ -118,7 +123,10 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						//apertura file
 						file = fopen(nome_file, "r");
 						if (file == NULL)
+						{
+							serverSendErr(server_socket_figlio);
 							serverError(7);
+						}
 						else
 						{
 							if (long_output)
@@ -140,7 +148,10 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 							fclose(file);
 							file = fopen(nome_file, "r");
 							if (file == NULL)
+							{
+								serverSendErr(server_socket_figlio);
 								serverError(7);
+							}
 							//scansione-invio file
 							bar1 = uli[0] / 10;
 							bar2 = 0;
@@ -170,17 +181,26 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 							uli[0] = fst.st_mtime;
 							send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
 							if (long_output)
-								printf("PASS timestamp '%ld' inviato\n",uli[0]);
+								printf("PASS timestamp '%ld' inviato\n", uli[0]);
 						}
 					}
 					else
+					{
+						serverSendErr(server_socket_figlio);
 						serverError(6);
+					}
 				}
 				else
+				{
+					serverSendErr(server_socket_figlio);
 					serverError(6);
+				}
 			}
 			else
+			{
+				serverSendErr(server_socket_figlio);
 				serverError(6);
+			}
 		}
 	}
 
@@ -227,9 +247,28 @@ void serverError(int codice_errore)
 		printf("Funzione stat() fallita\n");
 		printf("Terminazione server\n");
 		exit(-1);
+	case 10:
+		printf("Messaggio di errore non mandato correttamente\n");
+		printf("Terminazione server\n");
+		exit(-1);
 
 		printf("Errore non gestito\n");
 		printf("Terminazione server\n");
 		exit(-1);
 	}
+}
+
+void serverSendErr(int server_socket_error)
+{
+	char c[1];
+	int i;
+
+	i = send(server_socket_error, "-ERR", 4, MSG_NOSIGNAL);
+	c[0] = 10;
+	i += send(server_socket_error, c, 1, MSG_NOSIGNAL);
+	c[0] = 13;
+	i += send(server_socket_error, c, 1, MSG_NOSIGNAL);
+	if (i != 6)
+		serverError(10);
+	return;
 }

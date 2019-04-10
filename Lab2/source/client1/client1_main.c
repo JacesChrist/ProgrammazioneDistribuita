@@ -19,7 +19,7 @@ void clientError(int);
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
-	int i, bar1, bar2;
+	int i, j, bar1, bar2;
 	unsigned long int uli[1];
 	char car[1], c, *buf;
 	FILE *file;
@@ -92,12 +92,12 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 					printf("PASS file creato\n");
 				printf("- RICEZIONE IN CORSO ");
 				bar1 = uli[0] / 10;
-				for (i = 0; i < uli[0]; i++)
+				for (j = 0; j < uli[0]; j++)
 				{
 					fflush(stdout);
 					recv(client_socket, &c, 1, 0);
 					fprintf(file, "%c", c);
-					if (i == bar2)
+					if (j == bar2)
 					{
 						printf("#");
 						bar2 += bar1;
@@ -107,9 +107,9 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 				fclose(file);
 				if (long_output)
 					printf("PASS file scritto\n");
-				recv(client_socket,&uli[0],4, 0);
+				recv(client_socket, &uli[0], 4, 0);
 				if (long_output)
-					printf("PASS timestamp '%ld' ricevuto\n",uli[0]);
+					printf("PASS timestamp '%ld' ricevuto\n", uli[0]);
 			}
 		}
 		else
