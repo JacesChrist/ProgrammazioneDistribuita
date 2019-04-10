@@ -96,8 +96,24 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 				{
 					//ricezione nome file
 					recv(server_socket_figlio, &nome_file[i], 1, 0);
-					if (nome_file[i] == '\0')
-						break;
+					if (nome_file[i] == 13)
+					{
+						nome_file[i] = '\0';
+						if (long_output)
+							printf("PASS nome file ricevuto\n");
+						//ricezione CR LF
+						recv(server_socket_figlio, &nome_file[i+1], 1, 0);
+						if (nome_file[i+1] == 10){
+							if (long_output)
+								printf("PASS CR LF ricevuti\n");
+							break;
+						}
+						else
+						{
+							serverSendErr(server_socket_figlio);
+							serverError(6);
+						}
+					}
 					else
 					{
 						i++;
@@ -108,93 +124,73 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						}
 					}
 				}
-				if (long_output)
-					printf("PASS nome file ricevuto\n");
-				//ricezione CR LF
-				recv(server_socket_figlio, &c, 1, 0);
-				if (c == 10)
+		
+				
+				printf("- RICHIESTO FILE '%s' -\n", nome_file);
+				//apertura file
+				file = fopen(nome_file, "r");
+				if (file == NULL)
 				{
-					recv(server_socket_figlio, &c, 1, 0);
-					if (c == 13)
-					{
-						if (long_output)
-							printf("PASS CR LF ricevuti\n");
-						printf("- RICHIESTO FILE '%s' -\n", nome_file);
-						//apertura file
-						file = fopen(nome_file, "r");
-						if (file == NULL)
-						{
-							serverSendErr(server_socket_figlio);
-							serverError(7);
-						}
-						else
-						{
-							if (long_output)
-								printf("PASS file aperto\n");
-							//invio + O K
-							send(server_socket_figlio, "+OK", 3, MSG_NOSIGNAL);
-							if (long_output)
-								printf("PASS + O K inviato\n");
-							//conteggio dimensione
-							uli[0] = 0;
-							while (fscanf(file, "%c", &c) != EOF)
-							{
-								uli[0]++;
-							}
-							send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
-							if (long_output)
-								printf("PASS dimensione '%lu' Byte inviata\n", uli[0]);
-							printf("- INVIO IN CORSO ");
-							fclose(file);
-							file = fopen(nome_file, "r");
-							if (file == NULL)
-							{
-								serverSendErr(server_socket_figlio);
-								serverError(7);
-							}
-							//scansione-invio file
-							bar1 = uli[0] / 10;
-							bar2 = 0;
-							buf = malloc(sizeof(char));
-							for (i = 0; i < uli[0]; i++)
-							{
-								fflush(stdout);
-								fscanf(file, "%c", buf);
-								send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
-								//barra di aggiornamento
-								if (i == bar2)
-								{
-									printf("#");
-									bar2 += bar1;
-								}
-							}
-							free(buf);
-							fclose(file);
-							printf(" -\n");
-							if (long_output)
-								printf("PASS file inviato\n");
-							//invio timestamp
-							struct stat fst;
-							bzero(&fst, sizeof(fst));
-							if (stat(nome_file, &fst) != 0)
-								serverError(9);
-							uli[0] = fst.st_mtime;
-							send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
-							if (long_output)
-								printf("PASS timestamp '%ld' inviato\n", uli[0]);
-						}
-					}
-					else
-					{
-						serverSendErr(server_socket_figlio);
-						serverError(6);
-					}
+					serverSendErr(server_socket_figlio);
+					serverError(7);
 				}
 				else
 				{
-					serverSendErr(server_socket_figlio);
-					serverError(6);
+					if (long_output)
+						printf("PASS file aperto\n");
+					//invio + O K
+					send(server_socket_figlio, "+OK", 3, MSG_NOSIGNAL);
+					if (long_output)
+						printf("PASS + O K inviato\n");
+					//conteggio dimensione
+					uli[0] = 0;
+					while (fscanf(file, "%c", &c) != EOF)
+					{
+						uli[0]++;
+					}
+					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
+					if (long_output)
+						printf("PASS dimensione '%lu' Byte inviata\n", uli[0]);
+					printf("- INVIO IN CORSO ");
+					fclose(file);
+					file = fopen(nome_file, "r");
+					if (file == NULL)
+					{
+						serverSendErr(server_socket_figlio);
+						serverError(7);
+					}
+					//scansione-invio file
+					bar1 = uli[0] / 10;
+					bar2 = 0;
+					buf = malloc(sizeof(char));
+					for (i = 0; i < uli[0]; i++)
+					{
+						fflush(stdout);
+						fscanf(file, "%c", buf);
+						send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
+						//barra di aggiornamento
+						if (i == bar2)
+						{
+							printf("#");
+							bar2 += bar1;
+						}
+					}
+					free(buf);
+					fclose(file);
+					printf(" -\n");
+					if (long_output)
+						printf("PASS file inviato\n");
+					//invio timestamp
+					struct stat fst;
+					bzero(&fst, sizeof(fst));
+					if (stat(nome_file, &fst) != 0)
+						serverError(9);
+					uli[0] = fst.st_mtime;
+					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
+					if (long_output)
+						printf("PASS timestamp '%ld' inviato\n", uli[0]);
 				}
+		
 			}
 			else
 			{
