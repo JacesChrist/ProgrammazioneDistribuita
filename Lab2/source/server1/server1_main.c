@@ -139,12 +139,14 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					if (long_output)
 						printf("PASS file aperto\n");
 					//invio + O K
-					send(server_socket_figlio, "+OK", 3, MSG_NOSIGNAL);
+					send(server_socket_figlio, "+OK\0", 5, MSG_NOSIGNAL);
 					buf = malloc(sizeof(char));
 					buf[0] = 13;
 					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
 					buf[0] = 10;
 					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
+					free(buf);
+					//PROBLEMA QUI!!!!
 					if (long_output)
 						printf("PASS +OK CR LF inviato\n");
 					//conteggio dimensione
