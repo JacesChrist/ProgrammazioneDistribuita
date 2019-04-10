@@ -9,6 +9,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <time.h>
 
 char *prog_name;
 
@@ -159,6 +162,15 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 							printf(" -\n");
 							if (long_output)
 								printf("PASS file inviato\n");
+							//invio timestamp
+							struct stat fst;
+							bzero(&fst, sizeof(fst));
+							if (stat(nome_file, &fst) != 0)
+								serverError(9);
+							uli[0] = fst.st_mtime;
+							send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
+							if (long_output)
+								printf("PASS timestamp '%ld' inviato\n",uli[0]);
 						}
 					}
 					else
@@ -209,6 +221,10 @@ void serverError(int codice_errore)
 		exit(-1);
 	case 8:
 		printf("Nome file sfora 50 caratteri\n");
+		printf("Terminazione server\n");
+		exit(-1);
+	case 9:
+		printf("Funzione stat() fallita\n");
 		printf("Terminazione server\n");
 		exit(-1);
 

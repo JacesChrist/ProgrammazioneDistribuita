@@ -107,6 +107,9 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 				fclose(file);
 				if (long_output)
 					printf("PASS file scritto\n");
+				recv(client_socket,&uli[0],4, 0);
+				if (long_output)
+					printf("PASS timestamp '%ld' ricevuto\n",uli[0]);
 			}
 		}
 		else
