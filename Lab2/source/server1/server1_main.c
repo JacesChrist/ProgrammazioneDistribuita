@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	socklen_t address_length;
 	char c, nome_file[50], *buf;
-	int i, bar1, bar2, server_socket_figlio;
+	int i, k, bar1, bar2, server_socket_figlio;
 	unsigned long int uli[1];
 	FILE *file;
 
@@ -102,8 +102,9 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						if (long_output)
 							printf("PASS nome file ricevuto\n");
 						//ricezione CR LF
-						recv(server_socket_figlio, &nome_file[i+1], 1, 0);
-						if (nome_file[i+1] == 10){
+						recv(server_socket_figlio, &nome_file[i + 1], 1, 0);
+						if (nome_file[i + 1] == 10)
+						{
 							if (long_output)
 								printf("PASS CR LF ricevuti\n");
 							break;
@@ -124,8 +125,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						}
 					}
 				}
-		
-				
+
 				printf("- RICHIESTO FILE '%s' -\n", nome_file);
 				//apertura file
 				file = fopen(nome_file, "r");
@@ -139,22 +139,24 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					if (long_output)
 						printf("PASS file aperto\n");
 					//invio + O K
-					send(server_socket_figlio, "+OK\0", 5, MSG_NOSIGNAL);
+					send(server_socket_figlio, "+OK", 3, MSG_NOSIGNAL);
+					if (long_output)
+						printf("PASS +OK inviato\n");
 					buf = malloc(sizeof(char));
 					buf[0] = 13;
 					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
 					buf[0] = 10;
 					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
 					free(buf);
-					//PROBLEMA QUI!!!!
 					if (long_output)
-						printf("PASS +OK CR LF inviato\n");
+						printf("PASS CR LF inviato\n");
 					//conteggio dimensione
-					uli[0] = 0;
+					k = 0;
 					while (fscanf(file, "%c", &c) != EOF)
 					{
-						uli[0]++;
+						k++;
 					}
+					uli[0] = htonl(k);
 					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
 					if (long_output)
 						printf("PASS dimensione '%lu' Byte inviata\n", uli[0]);
@@ -167,10 +169,10 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						serverError(7);
 					}
 					//scansione-invio file
-					bar1 = uli[0] / 10;
+					bar1 = k / 10;
 					bar2 = 0;
 					buf = malloc(sizeof(char));
-					for (i = 0; i < uli[0]; i++)
+					for (i = 0; i < k; i++)
 					{
 						fflush(stdout);
 						fscanf(file, "%c", buf);
@@ -197,7 +199,6 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					if (long_output)
 						printf("PASS timestamp '%ld' inviato\n", uli[0]);
 				}
-		
 			}
 			else
 			{
