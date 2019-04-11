@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	socklen_t address_length;
 	char c, nome_file[50], *buf;
-	int i, k, bar1, bar2, server_socket_figlio;
-	unsigned long int uli[1];
+	int i, bar1, bar2, server_socket_figlio;
+	unsigned long int uli[1],uliCount;
 	FILE *file;
 
 	printf("* SERVER TCP *\n");
@@ -151,15 +151,15 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					if (long_output)
 						printf("PASS CR LF inviato\n");
 					//conteggio dimensione
-					k = 0;
+					uliCount = 0;
 					while (fscanf(file, "%c", &c) != EOF)
 					{
-						k++;
+						uliCount++;
 					}
-					uli[0] = htonl(k);
+					uli[0] = htonl(uliCount);
 					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
 					if (long_output)
-						printf("PASS dimensione '%lu' Byte inviata\n", uli[0]);
+						printf("PASS dimensione '%lu' Byte inviata\n",uliCount);
 					printf("- INVIO IN CORSO ");
 					fclose(file);
 					file = fopen(nome_file, "r");
@@ -169,10 +169,10 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 						serverError(7);
 					}
 					//scansione-invio file
-					bar1 = k / 10;
+					bar1 = uliCount / 10;
 					bar2 = 0;
 					buf = malloc(sizeof(char));
-					for (i = 0; i < k; i++)
+					for (i = 0; i < uliCount; i++)
 					{
 						fflush(stdout);
 						fscanf(file, "%c", buf);
@@ -194,10 +194,11 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					bzero(&fst, sizeof(fst));
 					if (stat(nome_file, &fst) != 0)
 						serverError(9);
-					uli[0] = fst.st_mtime;
+					uliCount = fst.st_mtime;
+					uli[0] = ntohl(uliCount);
 					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
 					if (long_output)
-						printf("PASS timestamp '%ld' inviato\n", uli[0]);
+						printf("PASS timestamp '%ld' inviato\n", uliCount);
 				}
 			}
 			else
@@ -205,6 +206,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 				serverSendErr(server_socket_figlio);
 				serverError(6);
 			}
+			close(server_socket_figlio);
 		}
 	}
 
