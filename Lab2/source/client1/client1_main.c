@@ -1,30 +1,23 @@
-/*
- * TEMPLATE
- * parametri:
- * - indirizzo
- * - porta
- * - file (n)
- */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+
+#include <sys/socket.h>
+
+#include "../receive_file.h"
 
 #define buff_size 50
 
 int long_output = 1;
-
 
 void clientError(int);
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
 	int i, j, bar1, bar2;
-	unsigned long int uli[1],uliCount;
-	char c, *buf,buffer[buff_size];
-	FILE *file;
+	unsigned long int uli[1], uliCount;
+	char c, *buf, buffer[buff_size];
 
 	printf("* CLIENT TCP *\n");
 
@@ -62,65 +55,20 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 
 	for (i = 0; i < (argc - 3); i++)
 	{
-		/*send(client_socket, "GET ", 4, MSG_NOSIGNAL);
-		if (long_output)
-			printf("PASS GET' ' inviato\n");
-		send(client_socket, argv[3 + i], strlen(argv[3 + i]) + 1, MSG_NOSIGNAL);
-		if (long_output)
-			printf("PASS nome file inviato\n");
-		buf = malloc(sizeof(char));
-		buf[0] = 13;
-		send(client_socket,buf, 1, MSG_NOSIGNAL);
-		buf[0] = 10;
-		send(client_socket, buf, 1, MSG_NOSIGNAL);
+		buf = malloc((7 + strlen(argv[3 + i])) * sizeof(char));
+		sprintf(buf, "GET %s\r\n", argv[3 + i]);
+		send(client_socket, buf, sizeof(buf), MSG_NOSIGNAL);
 		free(buf);
-		if (long_output)
-			printf("PASS CR LF inviato\n");*/
-		sprintf(buffer,"GET %s\r\n",argv[3+i]);
-		send(client_socket,buffer,sizeof(buffer), MSG_NOSIGNAL);
 		printf("- RICHIESTO FILE '%s' -\n", argv[3 + i]);
-		buf = malloc(3 * sizeof(char));
-		recv(client_socket, buf, 3, 0);
-		if (strcmp(buf, "+OK") == 0)
-		{
-			free(buf);
-			if (long_output)
-				printf("PASS +OK ricevuto\n");
-			recv(client_socket, &uli[0], 4, 0);
-			uint32_t size = ntohl((*(uint32_t *)uli));
-			if (long_output)
-				printf("PASS dimensione '%u' Byte ricevuta\n", size);
-			file = fopen(argv[3 + i], "w");
-			if (file == NULL)
-				clientError(7);
-			else
-			{
-				if (long_output)
-					printf("PASS file creato\n");
-				printf("- RICEZIONE IN CORSO ");
-				bar1 = uli[0] / 10;
-				for (j = 0; j < size; j++)
-				{
-					fflush(stdout);
-					recv(client_socket, &c, 1, 0);
-					fprintf(file, "%c", c);
-					if (j == bar2)
-					{
-						printf("#");
-						bar2 += bar1;
-					}
-				}
-				printf(" -\n");
-				fclose(file);
-				if (long_output)
-					printf("PASS file scritto\n");
-				recv(client_socket, &uli[0], 4, 0);
-				if (long_output)
-					printf("PASS timestamp '%ld' ricevuto\n", uli[0]);
-			}
-		}
-		else
+		buf = malloc(6*sizeof(char));
+		recv(client_socket, buf, 6, 0); //PROBLEMA QUI
+		if (strcmp(buf, "+OK\r\n") != 0)
 			clientError(6);
+		if (long_output)
+			printf("PASS +OK ricevuto\n");
+		if(client_receive_file_from_server(client_socket,argv[3+i])<0)
+			return(-1);
+		
 	}
 	printf("- CONNESSIONE CHIUSA -\n");
 
