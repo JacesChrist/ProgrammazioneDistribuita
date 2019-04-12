@@ -6,18 +6,20 @@
 #include <sys/socket.h>
 
 #include "../receive_file.h"
+#include "../error_manage.h"
+#include "../sockwrap.h"
 
 #define buff_size 50
 
-int long_output = 1;
+char *prog_name;
 
-void clientError(int);
+int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
-	int i, j, bar1, bar2;
+	int i;
 	unsigned long int uli[1], uliCount;
-	char c, *buf, buffer[buff_size];
+	char *buf, buffer[buff_size];
 
 	printf("* CLIENT TCP *\n");
 
@@ -53,63 +55,36 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 
 	//protocollo di connessione
 
-	for (i = 0; i < (argc - 3); i++)
+	for (i = 3; i < argc; i++)
 	{
-		buf = malloc((7 + strlen(argv[3 + i])) * sizeof(char));
-		sprintf(buf, "GET %s\r\n", argv[3 + i]);
-		send(client_socket, buf, sizeof(buf), MSG_NOSIGNAL);
-		free(buf);
-		printf("- RICHIESTO FILE '%s' -\n", argv[3 + i]);
-		buf = malloc(6*sizeof(char));
-		recv(client_socket, buf, 6, 0); //PROBLEMA QUI
+		//buf = malloc(3 * sizeof(char));
+		//sprintf(buf, "GET %s\r\n", argv[3]);
+		if (write(client_socket, "GET ", 4) != 4)
+			return (-1);
+		if (long_output)
+			printf("PASS GET' ' inviato\n");
+		if (write(client_socket, argv[i], strlen(argv[i])) != strlen(argv[i]))
+			return (-1);
+		if (long_output)
+			printf("PASS nome file inviato\n");
+		if (write(client_socket, "\r\n", 2) != 2)
+			return (-1);
+		if (long_output)
+			printf("PASS CR LF inviato\n");
+		//free(buf);
+		printf("- RICHIESTO FILE '%s' -\n", argv[3]);
+		buf = malloc(5 * sizeof(char));
+		if (recv(client_socket, buf, 5, 0) != 5)
+			return (-1); //PROBLEMA QUI
 		if (strcmp(buf, "+OK\r\n") != 0)
 			clientError(6);
+		free(buf);
 		if (long_output)
 			printf("PASS +OK ricevuto\n");
-		if(client_receive_file_from_server(client_socket,argv[3+i])<0)
-			return(-1);
-		
+		if (client_receive_file_from_server(client_socket, argv[3]) < 0)
+			return (-1);
 	}
 	printf("- CONNESSIONE CHIUSA -\n");
 
 	return 0;
-}
-
-void clientError(int codErr)
-{
-	switch (codErr)
-	{
-	case 1:
-		printf("Errore: numero di parametri insufficiente\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 2:
-		printf("Nessun file specificato da trasferire\n");
-		printf("Terminazione client\n");
-		exit(1);
-	case 3:
-		printf("Socket non creato correttamente\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 4:
-		printf("Connessione tra socket fallita\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 5:
-		printf("'sudo' richiesto per la porta specificata\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 6:
-		printf("Connessione tramite protocollo fallita\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 7:
-		printf("File non aperto correttamente\n");
-		printf("Terminazione client\n");
-		exit(-1);
-
-		printf("Errore non gestito\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	}
 }
