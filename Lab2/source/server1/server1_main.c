@@ -9,9 +9,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
+#include <sys/time.h>
 #include <sys/stat.h>
+#include <sys/stat.h>
+#include <sys/select.h>
 #include <unistd.h>
-#include <time.h>
+//#include <time.h>
 
 char *prog_name;
 
@@ -24,9 +27,11 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	socklen_t address_length;
 	char c, nome_file[50], *buf;
-	int i, bar1, bar2, server_socket_figlio;
-	unsigned long int uli[1],uliCount;
+	int i, bar1, bar2, server_socket_figlio, t;
+	unsigned long int uli[1], uliCount;
 	FILE *file;
+	/*struct timeval tval;
+	fd_set cset;*/
 
 	printf("* SERVER TCP *\n");
 
@@ -65,6 +70,13 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 	if (long_output)
 		printf("PASS inizio ascolto\n");
 
+	/*t = 15;
+	tval.tv_sec = t; 
+	tval.tv_usec = 0;
+
+	FD_ZERO(&cset); 
+	FD_SET(so, &cset);*/
+
 	while (1)
 	{
 		printf("- IN ATTESA DI CONNESSIONE -\n");
@@ -83,6 +95,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 			if (recv(server_socket_figlio, buf, 4, 0) <= 0)
 			{
 				free(buf);
+				close(server_socket_figlio);
 				printf("- CONNESSIONE CHIUSA -\n");
 				break;
 			}
@@ -159,7 +172,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					uli[0] = htonl(uliCount);
 					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
 					if (long_output)
-						printf("PASS dimensione '%lu' Byte inviata\n",uliCount);
+						printf("PASS dimensione '%lu' Byte inviata\n", uliCount);
 					printf("- INVIO IN CORSO ");
 					fclose(file);
 					file = fopen(nome_file, "r");
@@ -195,7 +208,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 					if (stat(nome_file, &fst) != 0)
 						serverError(9);
 					uliCount = fst.st_mtime;
-					uli[0] = ntohl(uliCount);
+					uli[0] = htonl(uliCount);
 					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
 					if (long_output)
 						printf("PASS timestamp '%ld' inviato\n", uliCount);
@@ -206,7 +219,6 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 				serverSendErr(server_socket_figlio);
 				serverError(6);
 			}
-			close(server_socket_figlio);
 		}
 	}
 
