@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 	//controllo parametri linea di comando
 	if (argc != 2)
 		serverError(1);
-	if (atoi(argv[1]) <= 1024)
+	if (atoi(argv[1]) < 1024)
 		serverError(5);
 	if (long_output)
 		printf("PASS parametri linea di comando\n");

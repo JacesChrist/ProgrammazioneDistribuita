@@ -12,16 +12,18 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-char *prog_name;
+#define buff_size 50
+
 int long_output = 1;
+
 
 void clientError(int);
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
 	int i, j, bar1, bar2;
-	unsigned long int uli[1];
-	char car[1], c, *buf;
+	unsigned long int uli[1],uliCount;
+	char c, *buf,buffer[buff_size];
 	FILE *file;
 
 	printf("* CLIENT TCP *\n");
@@ -29,7 +31,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 	//controllo argomenti linea di comando
 	if (argc < 3)
 		clientError(1);
-	if (atoi(argv[2]) <= 1024)
+	if (atoi(argv[2]) < 1024)
 		clientError(5);
 	if (argc == 3)
 		clientError(2);
@@ -60,18 +62,22 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 
 	for (i = 0; i < (argc - 3); i++)
 	{
-		send(client_socket, "GET ", 4, MSG_NOSIGNAL);
+		/*send(client_socket, "GET ", 4, MSG_NOSIGNAL);
 		if (long_output)
-			printf("PASS G E T ' ' inviato\n");
+			printf("PASS GET' ' inviato\n");
 		send(client_socket, argv[3 + i], strlen(argv[3 + i]) + 1, MSG_NOSIGNAL);
 		if (long_output)
 			printf("PASS nome file inviato\n");
-		car[0] = 10;
-		send(client_socket, car, 1, MSG_NOSIGNAL);
-		car[0] = 13;
-		send(client_socket, car, 1, MSG_NOSIGNAL);
+		buf = malloc(sizeof(char));
+		buf[0] = 13;
+		send(client_socket,buf, 1, MSG_NOSIGNAL);
+		buf[0] = 10;
+		send(client_socket, buf, 1, MSG_NOSIGNAL);
+		free(buf);
 		if (long_output)
-			printf("PASS CR LF inviato\n");
+			printf("PASS CR LF inviato\n");*/
+		sprintf(buffer,"GET %s\r\n",argv[3+i]);
+		send(client_socket,buffer,sizeof(buffer), MSG_NOSIGNAL);
 		printf("- RICHIESTO FILE '%s' -\n", argv[3 + i]);
 		buf = malloc(3 * sizeof(char));
 		recv(client_socket, buf, 3, 0);
@@ -79,10 +85,11 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 		{
 			free(buf);
 			if (long_output)
-				printf("PASS + O K ricevuto\n");
+				printf("PASS +OK ricevuto\n");
 			recv(client_socket, &uli[0], 4, 0);
+			uint32_t size = ntohl((*(uint32_t *)uli));
 			if (long_output)
-				printf("PASS dimensione '%lu' Byte ricevuta\n", uli[0]);
+				printf("PASS dimensione '%u' Byte ricevuta\n", size);
 			file = fopen(argv[3 + i], "w");
 			if (file == NULL)
 				clientError(7);
@@ -92,7 +99,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 					printf("PASS file creato\n");
 				printf("- RICEZIONE IN CORSO ");
 				bar1 = uli[0] / 10;
-				for (j = 0; j < uli[0]; j++)
+				for (j = 0; j < size; j++)
 				{
 					fflush(stdout);
 					recv(client_socket, &c, 1, 0);
