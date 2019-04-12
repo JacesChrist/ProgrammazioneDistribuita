@@ -55,7 +55,7 @@ void serverError(int codice_errore)
 	}
 }
 
-void serverSendErr(int server_socket_error)
+/*void serverSendErr(int server_socket_error)
 {
 	char c[1];
 	int i;
@@ -68,7 +68,7 @@ void serverSendErr(int server_socket_error)
 	if (i != 6)
 		serverError(10);
 	return;
-}
+}*/
 
 void clientError(int codErr)
 {

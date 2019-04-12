@@ -11,19 +11,22 @@
 #include <sys/stat.h>
 
 #include "receive_file.h"
-#include "error_manage.h"
+//#include "error_manage.h"
 #include "sockwrap.h"
 #include "errlib.h"
 
 int extern long_output;
 
+int server_send_file_to_client(int);
+void serverSendErr(int);
+
 int server_send_file_to_client(int socket)
 {
     int status_bar1, status_bar2;
     unsigned long int i, uliCount;
-    char nome_file[50], *buf;
+    char nome_file[50], *buf, buffer[50];
     FILE *file;
-    uint32_t size,timestamp;
+    uint32_t size, timestamp;
     struct stat st;
 
     i = 0;
@@ -47,7 +50,7 @@ int server_send_file_to_client(int socket)
             else
             {
                 serverSendErr(socket);
-                serverError(6);
+                return(-1);
             }
         }
         else
@@ -56,7 +59,7 @@ int server_send_file_to_client(int socket)
             if (i == 50)
             {
                 serverSendErr(socket);
-                serverError(8);
+                return(-1);
             }
         }
     }
@@ -67,7 +70,7 @@ int server_send_file_to_client(int socket)
     if (file == NULL)
     {
         serverSendErr(socket);
-        serverError(7);
+        return(-1);
     }
     if (long_output)
         printf("PASS file aperto\n");
@@ -79,7 +82,7 @@ int server_send_file_to_client(int socket)
     //conteggio dimensione
     uliCount = 0;
     buf = malloc(sizeof(char));
-    while (fscanf(file, "%c",buf) != EOF)
+    while (fscanf(file, "%c", buf) != EOF)
     {
         uliCount++;
     }
@@ -94,7 +97,7 @@ int server_send_file_to_client(int socket)
     if (file == NULL)
     {
         serverSendErr(socket);
-        serverError(7);
+        return(-1);
     }
     //scansione-invio file
     status_bar1 = uliCount / 10;
@@ -113,19 +116,37 @@ int server_send_file_to_client(int socket)
         }
     }
     free(buf);
-    fclose(file);
     printf(" -\n");
     if (long_output)
         printf("PASS file inviato\n");
     //invio timestamp
 
+    stat(nome_file, &st);
+    fclose(file);
     int ultima_modifica = st.st_mtime;
     timestamp = htonl(ultima_modifica);
-    //???
-    //time_t ts = timestamp;
-    //struct tm *timestamp_format;
+    time_t ts = timestamp;
+    struct tm *timestamp_format;
     write(socket, &timestamp, 4);
-    //timestamp_format = localtime(&ts);
-    //strftime(timestamp, sizeof(timestamp), "%d.%m.%Y %H:%M:%S", timestamp_format);
-    //printf("- ULTIMA MODIFICA FILE: %s\n", timestamp);
+    if(long_output)
+        printf("PASS timestamp '%u' inviato\n", timestamp);
+    timestamp_format = localtime(&ts);
+    strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", timestamp_format);
+    if(long_output)
+        printf("PASS timestamp '%s' inviato\n", buffer);
+}
+
+void serverSendErr(int server_socket_error)
+{
+	char c[1];
+	int i;
+
+	i = write(server_socket_error, "-ERR", 4);
+	c[0] = 10;
+	i += write(server_socket_error, c, 1);
+	c[0] = 13;
+	i += write(server_socket_error, c, 1);
+	if (i != 6)
+		return;
+	return;
 }

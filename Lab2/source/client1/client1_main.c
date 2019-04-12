@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 
 #include "../receive_file.h"
-#include "../error_manage.h"
+//#include "../error_manage.h"
 #include "../sockwrap.h"
 
 #define buff_size 50
@@ -24,18 +24,18 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 
 	//controllo argomenti linea di comando
 	if (argc < 3)
-		clientError(1);
+		return(-1);
 	if (atoi(argv[2]) < 1024)
-		clientError(5);
+		return(-1);
 	if (argc == 3)
-		clientError(2);
+		return(-1);
 	if (long_output)
 		printf("PASS parametri linea di comando\n");
 
 	//creazione socket
 	int client_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (client_socket < 0)
-		clientError(3);
+		return(-1);
 	if (long_output)
 		printf("PASS creazione socket\n");
 
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 
 	//connessione dei socket
 	if (connect(client_socket, (struct sockaddr *)&client_address, sizeof(client_address)) == -1)
-		clientError(4);
+		return(-1);
 	printf("- CONNESSIONE STABILITA -\n");
 
 	//protocollo di connessione
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 		if (read(client_socket, buf, 5) != 5)
 			return (-1); //PROBLEMA QUI
 		if (strcmp(buf, "+OK\r\n") != 0)
-			clientError(6);
+			return(-1);
 		free(buf);
 		if (long_output)
 			printf("PASS +OK ricevuto\n");
