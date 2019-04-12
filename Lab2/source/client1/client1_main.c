@@ -18,8 +18,7 @@ int long_output = 1;
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
 	int i;
-	unsigned long int uli[1], uliCount;
-	char *buf, buffer[buff_size];
+	char *buf;
 
 	printf("* CLIENT TCP *\n");
 
@@ -74,7 +73,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 		//free(buf);
 		printf("- RICHIESTO FILE '%s' -\n", argv[3]);
 		buf = malloc(5 * sizeof(char));
-		if (recv(client_socket, buf, 5, 0) != 5)
+		if (read(client_socket, buf, 5) != 5)
 			return (-1); //PROBLEMA QUI
 		if (strcmp(buf, "+OK\r\n") != 0)
 			clientError(6);

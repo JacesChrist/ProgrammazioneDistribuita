@@ -1,8 +1,3 @@
-/*
- * SERVER
- * parametri:
- * - porta
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -14,7 +9,9 @@
 #include <sys/select.h>
 #include <unistd.h>
 
+#include "../send_file.h"
 #include "../error_manage.h"
+#include "../sockwrap.h"
 
 char *prog_name;
 
@@ -23,10 +20,9 @@ int long_output = 1;
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	socklen_t address_length;
-	char c, nome_file[50], *buf;
-	int i, bar1, bar2, server_socket_figlio, t;
-	unsigned long int uli[1], uliCount;
-	FILE *file;
+	char *buf;
+	int server_socket_figlio;
+
 	/*struct timeval tval;
 	fd_set cset;*/
 
@@ -89,133 +85,22 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		{
 			//ricezione G E T ' '
 			buf = malloc(4 * sizeof(char));
-			if (recv(server_socket_figlio, buf, 4, 0) <= 0)
+			if (read(server_socket_figlio, buf, 4) <= 0)
 			{
 				free(buf);
 				close(server_socket_figlio);
 				printf("- CONNESSIONE CHIUSA -\n");
 				break;
 			}
-			if (strcmp(buf, "GET ") == 0)
-			{
-				free(buf);
-				if (long_output)
-					printf("PASS GET' ' ricevuto\n");
-				i = 0;
-				while (1)
-				{
-					//ricezione nome file
-					recv(server_socket_figlio, &nome_file[i], 1, 0);
-					if (nome_file[i] == 13)
-					{
-						nome_file[i] = '\0';
-						if (long_output)
-							printf("PASS nome file ricevuto\n");
-						//ricezione CR LF
-						recv(server_socket_figlio, &nome_file[i + 1], 1, 0);
-						if (nome_file[i + 1] == 10)
-						{
-							if (long_output)
-								printf("PASS CR LF ricevuti\n");
-							break;
-						}
-						else
-						{
-							serverSendErr(server_socket_figlio);
-							serverError(6);
-						}
-					}
-					else
-					{
-						i++;
-						if (i == 50)
-						{
-							serverSendErr(server_socket_figlio);
-							serverError(8);
-						}
-					}
-				}
-
-				printf("- RICHIESTO FILE '%s' -\n", nome_file);
-				//apertura file
-				file = fopen(nome_file, "r");
-				if (file == NULL)
-				{
-					serverSendErr(server_socket_figlio);
-					serverError(7);
-				}
-				else
-				{
-					if (long_output)
-						printf("PASS file aperto\n");
-					//invio + O K
-					send(server_socket_figlio, "+OK", 3, MSG_NOSIGNAL);
-					if (long_output)
-						printf("PASS +OK inviato\n");
-					buf = malloc(sizeof(char));
-					buf[0] = 13;
-					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
-					buf[0] = 10;
-					send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
-					free(buf);
-					if (long_output)
-						printf("PASS CR LF inviato\n");
-					//conteggio dimensione
-					uliCount = 0;
-					while (fscanf(file, "%c", &c) != EOF)
-					{
-						uliCount++;
-					}
-					uli[0] = htonl(uliCount);
-					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
-					if (long_output)
-						printf("PASS dimensione '%lu' Byte inviata\n", uliCount);
-					printf("- INVIO IN CORSO ");
-					fclose(file);
-					file = fopen(nome_file, "r");
-					if (file == NULL)
-					{
-						serverSendErr(server_socket_figlio);
-						serverError(7);
-					}
-					//scansione-invio file
-					bar1 = uliCount / 10;
-					bar2 = 0;
-					buf = malloc(sizeof(char));
-					for (i = 0; i < uliCount; i++)
-					{
-						fflush(stdout);
-						fscanf(file, "%c", buf);
-						send(server_socket_figlio, buf, 1, MSG_NOSIGNAL);
-						//barra di aggiornamento
-						if (i == bar2)
-						{
-							printf("#");
-							bar2 += bar1;
-						}
-					}
-					free(buf);
-					fclose(file);
-					printf(" -\n");
-					if (long_output)
-						printf("PASS file inviato\n");
-					//invio timestamp
-					struct stat fst;
-					bzero(&fst, sizeof(fst));
-					if (stat(nome_file, &fst) != 0)
-						serverError(9);
-					uliCount = fst.st_mtime;
-					uli[0] = htonl(uliCount);
-					send(server_socket_figlio, uli, 4, MSG_NOSIGNAL);
-					if (long_output)
-						printf("PASS timestamp '%ld' inviato\n", uliCount);
-				}
-			}
-			else
+			if (strcmp(buf, "GET ") != 0)
 			{
 				serverSendErr(server_socket_figlio);
 				serverError(6);
 			}
+			free(buf);
+			if (long_output)
+				printf("PASS GET' ' ricevuto\n");
+			server_send_file_to_client(server_socket_figlio);
 		}
 	}
 
