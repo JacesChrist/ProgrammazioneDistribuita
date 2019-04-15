@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	socklen_t address_length;
 	char *buf;
-	int server_socket_figlio;
+	int socket_figlio;
 
 	/*struct timeval tval;
 	fd_set cset;*/
@@ -37,8 +37,8 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		printf("PASS parametri linea di comando\n");
 
 	//creazione socket
-	int server_socket_passivo = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (server_socket_passivo < 0)
+	int socket_passivo = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_passivo < 0)
 		return(-1);
 	if (long_output)
 		printf("PASS creazione socket\n");
@@ -52,13 +52,13 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		printf("PASS definizione indirizzo\n");
 
 	//binding socket
-	if (bind(server_socket_passivo, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
+	if (bind(socket_passivo, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
 		return(-1);
 	if (long_output)
 		printf("PASS binding socket\n");
 
 	//inizio ascolto
-	if (listen(server_socket_passivo, 100) < 0)
+	if (listen(socket_passivo, 100) < 0)
 		return(-1);
 	if (long_output)
 		printf("PASS inizio ascolto\n");
@@ -76,8 +76,8 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 
 		//accettazione connesione
 		address_length = sizeof(struct sockaddr_in);
-		server_socket_figlio = accept(server_socket_passivo, (struct sockaddr *)&server_address, &address_length);
-		if (server_socket_figlio < 0)
+		socket_figlio = accept(socket_passivo, (struct sockaddr *)&server_address, &address_length);
+		if (socket_figlio < 0)
 			return(-1);
 		printf("- CONNESSIONE STABILITA -\n");
 
@@ -85,22 +85,22 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		{
 			//ricezione G E T ' '
 			buf = malloc(4 * sizeof(char));
-			if (read(server_socket_figlio, buf, 4) <= 0)
+			if (read(socket_figlio, buf, 4) <= 0)
 			{
 				free(buf);
-				close(server_socket_figlio);
+				close(socket_figlio);
 				printf("- CONNESSIONE CHIUSA -\n");
 				break;
 			}
 			if (strcmp(buf, "GET ") != 0)
 			{
-				serverSendErr(server_socket_figlio);
+				serverSendErr(socket_figlio);
 				return(-1);
 			}
 			free(buf);
 			if (long_output)
 				printf("PASS GET' ' ricevuto\n");
-			if(server_send_file_to_client(server_socket_figlio)<0)
+			if(server_send_file_to_client(socket_figlio)<0)
 				return(-1);
 		}
 	}

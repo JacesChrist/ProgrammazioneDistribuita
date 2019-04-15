@@ -50,7 +50,7 @@ int server_send_file_to_client(int socket)
             else
             {
                 serverSendErr(socket);
-                return(-1);
+                return (-1);
             }
         }
         else
@@ -59,7 +59,7 @@ int server_send_file_to_client(int socket)
             if (i == 50)
             {
                 serverSendErr(socket);
-                return(-1);
+                return (-1);
             }
         }
     }
@@ -70,7 +70,7 @@ int server_send_file_to_client(int socket)
     if (file == NULL)
     {
         serverSendErr(socket);
-        return(-1);
+        return (-1);
     }
     if (long_output)
         printf("PASS file aperto\n");
@@ -97,7 +97,7 @@ int server_send_file_to_client(int socket)
     if (file == NULL)
     {
         serverSendErr(socket);
-        return(-1);
+        return (-1);
     }
     //scansione-invio file
     status_bar1 = uliCount / 10;
@@ -128,25 +128,17 @@ int server_send_file_to_client(int socket)
     time_t ts = timestamp;
     struct tm *timestamp_format;
     write(socket, &timestamp, 4);
-    if(long_output)
+    if (long_output)
         printf("PASS timestamp '%u' inviato\n", timestamp);
     timestamp_format = localtime(&ts);
     strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", timestamp_format);
-    if(long_output)
+    if (long_output)
         printf("PASS timestamp '%s' inviato\n", buffer);
 }
 
-void serverSendErr(int server_socket_error)
+void serverSendErr(int socket_error)
 {
-	char c[1];
-	int i;
-
-	i = write(server_socket_error, "-ERR", 4);
-	c[0] = 10;
-	i += write(server_socket_error, c, 1);
-	c[0] = 13;
-	i += write(server_socket_error, c, 1);
-	if (i != 6)
-		return;
-	return;
+    if (write(socket_error, "-ERR\r\n", 6) != 6)
+        return (-1);
+    return;
 }
