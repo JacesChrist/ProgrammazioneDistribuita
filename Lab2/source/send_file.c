@@ -139,6 +139,6 @@ int server_send_file_to_client(int socket)
 void serverSendErr(int socket_error)
 {
     if (write(socket_error, "-ERR\r\n", 6) != 6)
-        return (-1);
+        return;
     return;
 }
