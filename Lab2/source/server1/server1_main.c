@@ -10,7 +10,6 @@
 #include <unistd.h>
 
 #include "../send_file.h"
-//#include "../error_manage.h"
 #include "../sockwrap.h"
 
 char *prog_name;
@@ -30,16 +29,22 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 
 	//controllo parametri linea di comando
 	if (argc != 2)
-		return(-1);
+	{
+		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+		return (-1);
+	}
 	if (atoi(argv[1]) < 1024)
-		return(-1);
+	{
+		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+		return (-1);
+	}
 	if (long_output)
 		printf("PASS parametri linea di comando\n");
 
 	//creazione socket
 	int socket_passivo = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_passivo < 0)
-		return(-1);
+		return (-1);
 	if (long_output)
 		printf("PASS creazione socket\n");
 
@@ -53,13 +58,19 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 
 	//binding socket
 	if (bind(socket_passivo, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
-		return(-1);
+	{
+		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+		return (-1);
+	}
 	if (long_output)
 		printf("PASS binding socket\n");
 
 	//inizio ascolto
 	if (listen(socket_passivo, 100) < 0)
-		return(-1);
+	{
+		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+		return (-1);
+	}
 	if (long_output)
 		printf("PASS inizio ascolto\n");
 
@@ -78,30 +89,37 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		address_length = sizeof(struct sockaddr_in);
 		socket_figlio = accept(socket_passivo, (struct sockaddr *)&server_address, &address_length);
 		if (socket_figlio < 0)
-			return(-1);
+		{
+			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+			return (-1);
+		}
 		printf("- CONNESSIONE STABILITA -\n");
 
 		while (1)
 		{
 			//ricezione G E T ' '
 			buf = malloc(4 * sizeof(char));
-			if (read(socket_figlio, buf, 4) <= 0)
+			if (read(socket_figlio, buf, 4) != 4)
 			{
 				free(buf);
 				close(socket_figlio);
 				printf("- CONNESSIONE CHIUSA -\n");
 				break;
 			}
-			if (strcmp(buf, "GET ") != 0)
+			if (strncmp(buf, "GET ", 4) != 0)
 			{
 				serverSendErr(socket_figlio);
-				return(-1);
+				printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+				return (-1);
 			}
 			free(buf);
 			if (long_output)
 				printf("PASS GET' ' ricevuto\n");
-			if(server_send_file_to_client(socket_figlio)<0)
-				return(-1);
+			if (server_send_file_to_client(socket_figlio) < 0)
+			{
+				printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+				return (-1);
+			}
 		}
 	}
 
