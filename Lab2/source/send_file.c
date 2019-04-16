@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/select.h>
+#include <sys/time.h>
 
 #include "receive_file.h"
 #include "sockwrap.h"
@@ -21,12 +23,49 @@ void serverSendErr(int);
 
 int server_send_file_to_client(int socket)
 {
-    int status_bar1, status_bar2;
+    int status_bar1, status_bar2, secTimer = 5;
     unsigned long int i, uliCount;
     char nome_file[50], *buf, buffer[50];
     FILE *file;
     uint32_t size, timestamp;
     struct stat st;
+
+    /*//inizializzazione timer
+    fd_set set;
+    struct timeval timeout;
+    FD_ZERO(&set);
+    FD_SET(socket, &set);
+    timeout.tv_sec = secTimer;
+    timeout.tv_sec = 0;
+    if (long_output)
+        printf("PASS timer inizializzato\n");*/
+
+    //if (select(FD_SETSIZE, &set, NULL, NULL, &timeout))
+    //{
+        //ricezione G E T ' '
+        buf = malloc(4 * sizeof(char));
+        if (read(socket, buf, 4) != 4)
+        {
+            free(buf);
+            close(socket);
+            printf("- CONNESSIONE CHIUSA -\n");
+            return (1);
+        }
+        if (strncmp(buf, "GET ", 4) != 0)
+        {
+            serverSendErr(socket);
+            printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+            return (-1);
+        }
+        free(buf);
+        if (long_output)
+            printf("PASS GET' ' ricevuto\n");
+    /*}
+    else
+    {
+        printf("- TIMEOUT CONNESSIONE -");
+        fflush(stdout);
+    }*/
 
     i = 0;
     while (1)
@@ -117,7 +156,7 @@ int server_send_file_to_client(int socket)
     {
         fflush(stdout);
         fscanf(file, "%c", buf);
-        if(write(socket, buf, 1)!=1)
+        if (write(socket, buf, 1) != 1)
         {
             serverSendErr(socket);
             printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
