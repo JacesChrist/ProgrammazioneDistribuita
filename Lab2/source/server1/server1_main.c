@@ -85,11 +85,8 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		}
 		printf("- CONNESSIONE STABILITA -\n");
 
-		if (server_send_file_to_client(socket_son) < 0)
-		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-			return (-1);
-		}
+		while (server_send_file_to_client(socket_son) > 0);
+		printf("- CONNESSIONE CHIUSA -\n");
 	}
 
 	return 0;

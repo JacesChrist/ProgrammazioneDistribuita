@@ -23,48 +23,61 @@ int client_receive_file_from_server(int socket, char *file_name)
     FILE *file;
     uint32_t size, timestamp;
 
+    //sleep(10);
     if (write(socket, "GET ", 4) != 4)
-		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-			return (-1);
-		}
-		if (long_output)
-			printf("PASS GET' ' inviato\n");
-		if (write(socket, file_name, strlen(file_name)) != strlen(file_name))
-		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-			return (-1);
-		}
-		if (long_output)
-			printf("PASS nome file inviato\n");
-		if (write(socket, "\r\n", 2) != 2)
-		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-			return (-1);
-		}
-		if (long_output)
-			printf("PASS CR LF inviato\n");
-		printf("- RICHIESTO FILE '%s' -\n", file_name);
-		buf = malloc(5 * sizeof(char));
-		if (read(socket, buf, 5) != 5)
-		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-			return (-1);
-		}
-		if (strncmp(buf, "+OK\r\n", 5) != 0)
-		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-			return (-1);
-		}
-		free(buf);
-		if (long_output)
-			printf("PASS +OK ricevuto\n");
+    {
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (1);
+    }
+    if (long_output)
+        printf("PASS GET' ' inviato\n");
+    if (write(socket, file_name, strlen(file_name)) != strlen(file_name))
+    {
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (1);
+    }
+    if (long_output)
+        printf("PASS nome file inviato\n");
+    if (write(socket, "\r\n", 2) != 2)
+    {
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (1);
+    }
+    if (long_output)
+        printf("PASS CR LF inviato\n");
+    printf("- RICHIESTO FILE '%s' -\n", file_name);
+    buf = malloc(5 * sizeof(char));
+    if (read(socket, buf, 5) != 5)
+    {
+        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (-1);
+    }
+    if (buf[0] == '-')
+    {
+        read(socket, buf, 5);
+        printf("- ERRORE RICHIESTA -\n");
+        return (1);
+    }
+    if (strncmp(buf, "+OK\r\n", 5) != 0)
+    {
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (1);
+    }
+    free(buf);
+    if (long_output)
+        printf("PASS +OK ricevuto\n");
 
     buf = malloc(4 * sizeof(char));
     if (read(socket, buf, 4) != 4)
     {
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (-1);
+    }
+    if (buf[0] == '-')
+    {
+        read(socket, buf, 5);
+        printf("- ERRORE RICHIESTA -\n");
+        return (1);
     }
     size = ntohl((*(uint32_t *)buf));
     free(buf);
@@ -73,8 +86,8 @@ int client_receive_file_from_server(int socket, char *file_name)
     file = fopen(file_name, "w");
     if (file == NULL)
     {
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-        return (-1);
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (1);
     }
 
     if (long_output)
@@ -106,6 +119,12 @@ int client_receive_file_from_server(int socket, char *file_name)
     {
         printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
         return (-1);
+    }
+    if (buf[0] == '-')
+    {
+        read(socket, buf, 5);
+        printf("- ERRORE RICHIESTA -\n");
+        return (1);
     }
     if (long_output)
         printf("PASS timestamp ricevuto\n");

@@ -30,8 +30,8 @@ int server_send_file_to_client(int socket)
     uint32_t size, timestamp;
     struct stat st;
 
-    /*//inizializzazione timer
-    fd_set set;
+    //inizializzazione timer
+    /*fd_set set;
     struct timeval timeout;
     FD_ZERO(&set);
     FD_SET(socket, &set);
@@ -41,27 +41,26 @@ int server_send_file_to_client(int socket)
         printf("PASS timer inizializzato\n");*/
 
     //if (select(FD_SETSIZE, &set, NULL, NULL, &timeout))
-    //{
+    {
         //ricezione G E T ' '
         buf = malloc(4 * sizeof(char));
         if (read(socket, buf, 4) != 4)
         {
             free(buf);
             close(socket);
-            printf("- CONNESSIONE CHIUSA -\n");
-            return (1);
+            return (-1);
         }
         if (strncmp(buf, "GET ", 4) != 0)
         {
             serverSendErr(socket);
-            printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-            return (-1);
+            printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+            return (1);
         }
         free(buf);
         if (long_output)
             printf("PASS GET' ' ricevuto\n");
-    /*}
-    else
+    }
+    /*else
     {
         printf("- TIMEOUT CONNESSIONE -");
         fflush(stdout);
@@ -79,20 +78,15 @@ int server_send_file_to_client(int socket)
                 printf("PASS nome file ricevuto\n");
             //ricezione (CR) LF
             read(socket, &nome_file[i + 1], 1);
-            if (nome_file[i + 1] == 10)
-            {
-                if (long_output)
-                    printf("PASS CR LF ricevuti\n");
-                break;
-            }
-            else
+            if (nome_file[i + 1] != 10)
             {
                 serverSendErr(socket);
-                {
-                    printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-                    return (-1);
-                }
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                return (1);
             }
+            if (long_output)
+                printf("PASS CR LF ricevuti\n");
+            break;
         }
         else
         {
@@ -100,10 +94,8 @@ int server_send_file_to_client(int socket)
             if (i == 50)
             {
                 serverSendErr(socket);
-                {
-                    printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-                    return (-1);
-                }
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                return (1);
             }
         }
     }
@@ -114,15 +106,15 @@ int server_send_file_to_client(int socket)
     if (file == NULL)
     {
         serverSendErr(socket);
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
-        return (-1);
+        printf("- FILE INESISTENTE -\n");
+        return (1);
     }
     if (long_output)
         printf("PASS file aperto\n");
     //invio + O K
     if (write(socket, "+OK\r\n", 5) != 5)
     {
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (-1);
     }
     if (long_output)
@@ -145,7 +137,7 @@ int server_send_file_to_client(int socket)
     if (file == NULL)
     {
         serverSendErr(socket);
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
         return (-1);
     }
     //scansione-invio file
@@ -181,7 +173,7 @@ int server_send_file_to_client(int socket)
     timestamp = htonl(ultima_modifica);
     if (write(socket, &timestamp, 4) != 4)
     {
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
         return (-1);
     }
     if (long_output)
@@ -200,7 +192,7 @@ void serverSendErr(int socket_error)
 {
     if (write(socket_error, "-ERR\r\n", 6) != 6)
     {
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return;
     }
     return;
