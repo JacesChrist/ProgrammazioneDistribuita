@@ -14,31 +14,33 @@
 #include "sockwrap.h"
 #include "errlib.h"
 
+#define buffer_size 500
+
 int extern long_output;
 
 int client_receive_file_from_server(int socket, char *file_name)
 {
-    char *buf, buffer[50];
-    int i, status_bar1, status_bar2;
+    char *buf, buffer[buffer_size];
+    unsigned long status_bar1, status_bar2, received_byte;
     FILE *file;
-    uint32_t size, timestamp;
+    uint32_t dimension, timestamp;
 
     //sleep(10);
-    if (send(socket, "GET ", 4,MSG_NOSIGNAL) != 4)
+    if (send(socket, "GET ", 4, MSG_NOSIGNAL) != 4)
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (1);
     }
     if (long_output)
         printf("PASS GET' ' inviato\n");
-    if (send(socket, file_name, strlen(file_name),MSG_NOSIGNAL) != strlen(file_name))
+    if (send(socket, file_name, strlen(file_name), MSG_NOSIGNAL) != strlen(file_name))
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (1);
     }
     if (long_output)
         printf("PASS nome file inviato\n");
-    if (send(socket, "\r\n", 2,MSG_NOSIGNAL) != 2)
+    if (send(socket, "\r\n", 2, MSG_NOSIGNAL) != 2)
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (1);
@@ -47,14 +49,14 @@ int client_receive_file_from_server(int socket, char *file_name)
         printf("PASS CR LF inviato\n");
     printf("- RICHIESTO FILE '%s' -\n", file_name);
     buf = malloc(5 * sizeof(char));
-    if (recv(socket, buf, 5,0) != 5)
+    if (recv(socket, buf, 5, 0) != 5)
     {
         printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (-1);
     }
     if (buf[0] == '-')
     {
-        recv(socket, buf, 5,0);
+        recv(socket, buf, 5, 0);
         printf("- ERRORE RICHIESTA -\n");
         return (1);
     }
@@ -68,21 +70,21 @@ int client_receive_file_from_server(int socket, char *file_name)
         printf("PASS +OK ricevuto\n");
 
     buf = malloc(4 * sizeof(char));
-    if (recv(socket, buf, 4,0) != 4)
+    if (recv(socket, buf, 4, 0) != 4)
     {
         printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (-1);
     }
     if (buf[0] == '-')
     {
-        recv(socket, buf, 5,0);
+        recv(socket, buf, 5, 0);
         printf("- ERRORE RICHIESTA -\n");
         return (1);
     }
-    size = ntohl((*(uint32_t *)buf));
+    dimension = ntohl((*(uint32_t *)buf));
     free(buf);
     if (long_output)
-        printf("PASS dimensione '%u' Byte ricevuta\n", size);
+        printf("PASS dimensione '%u' Byte ricevuta\n", dimension);
     file = fopen(file_name, "w");
     if (file == NULL)
     {
@@ -93,18 +95,52 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output)
         printf("PASS file creato\n");
     printf("- RICEZIONE IN CORSO ");
-    status_bar1 = size / 10;
+    status_bar1 = dimension / 10;
     status_bar2 = 0;
-    buf = malloc(1 * sizeof(char));
-    for (i = 0; i < size; i++)
+    received_byte = 0;
+    while (1)
     {
-        fflush(stdout);
-        recv(socket, buf, 1,0);
-        fprintf(file, "%s", buf);
-        if (i == status_bar2)
+        if ((dimension - received_byte) > buffer_size)
         {
-            printf("#");
-            status_bar2 += status_bar1;
+            if (recv(socket, buffer, buffer_size, 0) != buffer_size)
+            {
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                return (1);
+            }
+            if (fprintf(file, "%s", buffer) < 0)
+            {
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                return (1);
+            }
+            received_byte += buffer_size;
+        }
+        else
+        {
+            buf = malloc((dimension - received_byte) * sizeof(char));
+            if (recv(socket, buf, (dimension - received_byte), 0) != (dimension - received_byte))
+            {
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                return (1);
+            }
+            if (fprintf(file, "%s", buf) < 0)
+            {
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                return (1);
+            }
+            free(buf);
+            break;
+        }
+        //barra di aggiornamento
+        if (received_byte >= status_bar2)
+        {
+            do
+            {
+
+                printf("#");
+                status_bar2 += status_bar1;
+                fflush(stdout);
+            }
+            while(received_byte >= status_bar2);
         }
     }
     printf(" -\n");
@@ -115,14 +151,14 @@ int client_receive_file_from_server(int socket, char *file_name)
 
     buf = malloc(4 * sizeof(char));
 
-    if (recv(socket, buf, 4,0) != 4)
+    if (recv(socket, buf, 4, 0) != 4)
     {
         printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
         return (-1);
     }
     if (buf[0] == '-')
     {
-        recv(socket, buf, 5,0);
+        recv(socket, buf, 5, 0);
         printf("- ERRORE RICHIESTA -\n");
         return (1);
     }

@@ -17,7 +17,7 @@
 #include "sockwrap.h"
 #include "errlib.h"
 
-#define buffer_size 1500
+#define buffer_size 500
 
 int extern long_output;
 
@@ -27,7 +27,7 @@ void serverSendErr(int);
 int server_send_file_to_client(int socket)
 {
     int secTimer = 5, ultima_modifica;
-    unsigned long int i, dimension, sent_byte,status_bar1, status_bar2;
+    unsigned long int i, dimension, sent_byte, status_bar1, status_bar2;
     char nome_file[50], *buf, buffer[buffer_size];
     FILE *file;
     uint32_t size, timestamp;
@@ -133,7 +133,6 @@ int server_send_file_to_client(int socket)
     status_bar1 = dimension / 10;
     status_bar2 = 0;
     sent_byte = 0;
-    i = 0;
     printf("- INVIO IN CORSO ");
     while (1)
     {
@@ -178,7 +177,6 @@ int server_send_file_to_client(int socket)
             status_bar2 += status_bar1;
             fflush(stdout);
         }
-       
     }
     printf(" -\n");
     if (long_output)
