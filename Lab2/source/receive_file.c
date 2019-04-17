@@ -56,9 +56,10 @@ int client_receive_file_from_server(int socket, char *file_name)
     }
     if (buf[0] == '-')
     {
-        recv(socket, buf, 5, 0);
+        recv(socket, buf, 1, 0);
         printf("- ERRORE RICHIESTA -\n");
-        return (1);
+        close(socket);
+        exit(1);
     }
     if (strncmp(buf, "+OK\r\n", 5) != 0)
     {
@@ -77,9 +78,10 @@ int client_receive_file_from_server(int socket, char *file_name)
     }
     if (buf[0] == '-')
     {
-        recv(socket, buf, 5, 0);
+        recv(socket, buf, 2, 0);
         printf("- ERRORE RICHIESTA -\n");
-        return (1);
+        close(socket);
+        exit(1);
     }
     dimension = ntohl((*(uint32_t *)buf));
     free(buf);
@@ -158,9 +160,10 @@ int client_receive_file_from_server(int socket, char *file_name)
     }
     if (buf[0] == '-')
     {
-        recv(socket, buf, 5, 0);
+        recv(socket, buf, 2, 0);
         printf("- ERRORE RICHIESTA -\n");
-        return (1);
+        close(socket);
+        exit(1);
     }
     if (long_output)
         printf("PASS timestamp ricevuto\n");

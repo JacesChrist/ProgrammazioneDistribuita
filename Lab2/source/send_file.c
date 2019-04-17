@@ -22,7 +22,6 @@
 int extern long_output;
 
 int server_send_file_to_client(int);
-void serverSendErr(int);
 
 int server_send_file_to_client(int socket)
 {
@@ -55,9 +54,14 @@ int server_send_file_to_client(int socket)
         }
         if (strncmp(buf, "GET ", 4) != 0)
         {
-            serverSendErr(socket);
-            printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-            return (1);
+            printf("- ERRORE NELLA PROCEDURA -\n");
+            if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+            {
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                return (-1);
+            }
+            close(socket);
+            return (0);
         }
         free(buf);
         if (long_output)
@@ -83,9 +87,14 @@ int server_send_file_to_client(int socket)
             recv(socket, &nome_file[i + 1], 1, 0);
             if (nome_file[i + 1] != 10)
             {
-                serverSendErr(socket);
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (1);
+                printf("- ERRORE NELLA PROCEDURA -\n");
+                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                close(socket);
+                return (0);
             }
             if (long_output)
                 printf("PASS CR LF ricevuti\n");
@@ -96,14 +105,34 @@ int server_send_file_to_client(int socket)
             i++;
             if (i == buffer_size)
             {
-                serverSendErr(socket);
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (1);
+                printf("- ERRORE NELLA PROCEDURA -\n");
+                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                close(socket);
+                return (0);
             }
         }
     }
 
     printf("- RICHIESTO FILE '%s' -\n", nome_file);
+    //apertura file
+    file = fopen(nome_file, "r");
+    if (file == NULL)
+    {
+        printf("- ERRORE NELLA PROCEDURA -\n");
+        if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+        {
+            printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+            return (-1);
+        }
+        close(socket);
+        return (0);
+    }
+    if (long_output)
+        printf("PASS file aperto\n");
     //invio + O K
     if (send(socket, "+OK\r\n", 5, MSG_NOSIGNAL) != 5)
     {
@@ -119,16 +148,6 @@ int server_send_file_to_client(int socket)
     send(socket, &size, 4, MSG_NOSIGNAL);
     if (long_output)
         printf("PASS dimensione '%lu' Byte inviata\n", dimension);
-    //apertura file
-    file = fopen(nome_file, "r");
-    if (file == NULL)
-    {
-        serverSendErr(socket);
-        printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-        return (-1);
-    }
-    if (long_output)
-        printf("PASS file aperto\n");
     //scansione-invio file
     status_bar1 = dimension / 10;
     status_bar2 = 0;
@@ -140,15 +159,25 @@ int server_send_file_to_client(int socket)
         {
             if (fread(buffer, buffer_size, 1, file) != 1)
             {
-                serverSendErr(socket);
-                printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (-1);
+                printf("- ERRORE NELLA PROCEDURA -\n");
+                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                close(socket);
+                return (0);
             }
             if (send(socket, buffer, buffer_size, MSG_NOSIGNAL) != buffer_size)
             {
-                serverSendErr(socket);
-                printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (-1);
+                printf("- ERRORE NELLA PROCEDURA -\n");
+                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                close(socket);
+                return (0);
             }
             sent_byte += buffer_size;
         }
@@ -157,15 +186,25 @@ int server_send_file_to_client(int socket)
             buf = malloc((dimension - sent_byte) * sizeof(char));
             if (fread(buf, (dimension - sent_byte), 1, file) != 1)
             {
-                serverSendErr(socket);
-                printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (-1);
+                printf("- ERRORE NELLA PROCEDURA -\n");
+                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                close(socket);
+                return (0);
             }
             if (send(socket, buf, (dimension - sent_byte), MSG_NOSIGNAL) != (dimension - sent_byte))
             {
-                serverSendErr(socket);
-                printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (-1);
+                printf("- ERRORE NELLA PROCEDURA -\n");
+                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                close(socket);
+                return (0);
             }
             free(buf);
             break;
@@ -201,14 +240,4 @@ int server_send_file_to_client(int socket)
     }
 
     return (1);
-}
-
-void serverSendErr(int socket_error)
-{
-    if (send(socket_error, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
-    {
-        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-        return;
-    }
-    return;
 }
