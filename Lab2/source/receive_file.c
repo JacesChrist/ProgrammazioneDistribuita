@@ -21,11 +21,11 @@ int extern long_output;
 int client_receive_file_from_server(int socket, char *file_name)
 {
     char *buf, buffer[buffer_size];
-    unsigned long status_bar1, status_bar2, received_byte;
+    unsigned long received_byte;
     FILE *file;
     uint32_t dimension, timestamp;
 
-    //sleep(10);
+    sleep(10);
     if (send(socket, "GET ", 4, MSG_NOSIGNAL) != 4)
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
@@ -96,9 +96,7 @@ int client_receive_file_from_server(int socket, char *file_name)
 
     if (long_output)
         printf("PASS file creato\n");
-    printf("- RICEZIONE IN CORSO ");
-    status_bar1 = dimension / 10;
-    status_bar2 = 0;
+    printf("- RICEZIONE IN CORSO -\n");
     received_byte = 0;
     while (1)
     {
@@ -132,20 +130,7 @@ int client_receive_file_from_server(int socket, char *file_name)
             free(buf);
             break;
         }
-        //barra di aggiornamento
-        if (received_byte >= status_bar2)
-        {
-            do
-            {
-
-                printf("#");
-                status_bar2 += status_bar1;
-                fflush(stdout);
-            }
-            while(received_byte >= status_bar2);
-        }
     }
-    printf(" -\n");
     fclose(file);
     free(buf);
     if (long_output)

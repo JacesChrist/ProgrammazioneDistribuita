@@ -25,7 +25,7 @@ int server_send_file_to_client(int);
 
 int server_send_file_to_client(int socket)
 {
-    int secTimer = 5, ultima_modifica;
+    int secTimer = 5, res_sel, ultima_modifica;
     unsigned long int i, dimension, sent_byte, status_bar1, status_bar2;
     char nome_file[50], *buf, buffer[buffer_size];
     FILE *file;
@@ -33,16 +33,22 @@ int server_send_file_to_client(int socket)
     struct stat stats;
 
     //inizializzazione timer
-    /*fd_set set;
-    struct timeval timeout;
-    FD_ZERO(&set);
-    FD_SET(socket, &set);
-    timeout.tv_sec = secTimer;
-    timeout.tv_sec = 0;
+    fd_set cset;
+    struct timeval tval;
+    FD_ZERO(&cset);
+    FD_SET(socket, &cset);
+    tval.tv_sec = secTimer;
+    tval.tv_usec = 0;
+    res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
+    if (res_sel == -1)
+    {
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (-1);
+    }
     if (long_output)
-        printf("PASS timer inizializzato\n");*/
+        printf("PASS timer inizializzato\n");
 
-    //if (select(FD_SETSIZE, &set, NULL, NULL, &timeout))
+    if (res_sel > 0)
     {
         //ricezione G E T ' '
         buf = malloc(4 * sizeof(char));
@@ -67,11 +73,17 @@ int server_send_file_to_client(int socket)
         if (long_output)
             printf("PASS GET' ' ricevuto\n");
     }
-    /*else
+    else
     {
         printf("- TIMEOUT CONNESSIONE -");
-        fflush(stdout);
-    }*/
+        if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
+        {
+            printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+            return (-1);
+        }
+        close(socket);
+        return (0);
+    }
 
     i = 0;
     while (1)
