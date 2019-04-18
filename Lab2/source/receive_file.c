@@ -233,7 +233,7 @@ int client_receive_file_from_server(int socket, char *file_name)
             }
             if (res_sel > 0)
             {
-                if (recv(socket, buffer, buffer_size, 0) != buffer_size)
+                if (recv(socket, buffer, buffer_size, 0) != buffer_size) //a volte faila, probabilmente si spacca il socket
                 {
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                     return (-1);

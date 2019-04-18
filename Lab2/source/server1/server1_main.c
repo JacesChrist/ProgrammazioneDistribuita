@@ -20,7 +20,7 @@ int long_output = 1;
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	char *buf;
-	int socket_passive, socket_son;
+	int socket_passive, socket_son,i;
 	struct sockaddr_in server_address;
 	socklen_t address_length;
 
@@ -85,8 +85,9 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 			return (-1);
 		}
 		printf("- CONNESSIONE STABILITA -\n");
-		while (server_send_file_to_client(socket_son) > 0);
-		printf("- CONNESSIONE CHIUSA -\n");
+		while ((i = server_send_file_to_client(socket_son)) > 0);
+		if(i == -1)
+			printf("- CONNESSIONE INTERROTTA -\n");
 	}
 
 	return 0;

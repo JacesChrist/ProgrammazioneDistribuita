@@ -24,17 +24,17 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 	//controllo argomenti linea di comando
 	if (argc < 3)
 	{
-		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 		return (-1);
 	}
 	if (atoi(argv[2]) < 1024)
 	{
-		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 		return (-1);
 	}
 	if (argc == 3)
 	{
-		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 		return (-1);
 	}
 	if (long_output)
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 	socket_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_client < 0)
 	{
-		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 		return (-1);
 	}
 	if (long_output)
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 	//connessione dei socket
 	if (connect(socket_client, (struct sockaddr *)&client_address, sizeof(client_address)) == -1)
 	{
-		printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 		return (-1);
 	}
 	printf("- CONNESSIONE STABILITA -\n");
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 		if (client_receive_file_from_server(socket_client, argv[i]) < 0)
 		{
 			if (long_output)
-				printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+				printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
 			if (close(socket_client) != 0)
 			{
 				if (long_output)
@@ -81,6 +81,12 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 			}
 			return (-1);
 		}
+	}
+	if (close(socket_client) != 0)
+	{
+		if (long_output)
+			printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+		return (-1);
 	}
 	printf("- CONNESSIONE CHIUSA -\n");
 

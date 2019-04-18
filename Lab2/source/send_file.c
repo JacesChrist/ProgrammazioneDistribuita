@@ -57,7 +57,18 @@ int server_send_file_to_client(int socket)
         buf = malloc(4 * sizeof(char));
         if (recv(socket, buf, 4, 0) != 4)
         {
-            printf("--- %d ---", socket);
+            printf("--- %d %d ---",buf[0],buf[1]); //???
+            if (strncmp(buf, "FIN", 3) == 0) //NOPE
+            {
+                if (close(socket) != 0)
+                {
+                    if (long_output)
+                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                    return (0);
+                }
+                printf("-  CONNESSIONE CHIUSA -\n");
+                return (-2);
+            }
             if (long_output)
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
             free(buf);
@@ -235,7 +246,7 @@ int server_send_file_to_client(int socket)
                 serverSendErr(socket);
                 return (0);
             }
-            if (send(socket, buffer, buffer_size, MSG_NOSIGNAL) != buffer_size)
+            if (send(socket, buffer, buffer_size, MSG_NOSIGNAL) != buffer_size) //a volte faila, probabilmente si spacca il socket
             {
                 if (long_output)
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
@@ -302,7 +313,7 @@ void serverSendErr(int socket_error)
     if (send(socket_error, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
     {
         if (long_output)
-            printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+            printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
         return;
     }
     if (close(socket_error) != 0)
