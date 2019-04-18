@@ -10,6 +10,7 @@
 
 char *prog_name;
 
+int buffer_size = 100;
 int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 		return (-1);
 	}
 	if (long_output)
-		printf("PASS parametri linea di comando\n");
+		printf("PASS: parametri linea di comando\n");
 
 	//creazione socket
 	socket_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -47,14 +48,14 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 		return (-1);
 	}
 	if (long_output)
-		printf("PASS creazione socket\n");
+		printf("PASS: creazione socket\n");
 
 	//definizione indirizzo
 	client_address.sin_family = AF_INET;
 	client_address.sin_port = htons(atoi(argv[2]));
 	client_address.sin_addr.s_addr = inet_addr(argv[1]);
 	if (long_output)
-		printf("PASS definizione indirizzo\n");
+		printf("PASS: definizione indirizzo\n");
 
 	//connessione dei socket
 	if (connect(socket_client, (struct sockaddr *)&client_address, sizeof(client_address)) == -1)
@@ -70,7 +71,14 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 	{
 		if (client_receive_file_from_server(socket_client, argv[i]) < 0)
 		{
-			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+			if (long_output)
+				printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+			if (close(socket_client) != 0)
+			{
+				if (long_output)
+					printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+				return (-1);
+			}
 			return (-1);
 		}
 	}

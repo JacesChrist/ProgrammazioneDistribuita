@@ -14,6 +14,7 @@
 
 char *prog_name;
 
+int buffer_size = 100;
 int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
@@ -37,21 +38,21 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		return (-1);
 	}
 	if (long_output)
-		printf("PASS parametri linea di comando\n");
+		printf("PASS: parametri linea di comando\n");
 
 	//creazione socket
 	socket_passive = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (socket_passive < 0)
 		return (-1);
 	if (long_output)
-		printf("PASS creazione socket\n");
+		printf("PASS: creazione socket\n");
 
 	//definizione indirizzo
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(atoi(argv[1]));
 	server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (long_output)
-		printf("PASS definizione indirizzo\n");
+		printf("PASS: definizione indirizzo\n");
 
 	//binding socket
 	if (bind(socket_passive, (struct sockaddr *)&server_address, sizeof(server_address)) < 0)
@@ -60,7 +61,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		return (-1);
 	}
 	if (long_output)
-		printf("PASS binding socket\n");
+		printf("PASS: binding socket\n");
 
 	//inizio ascolto
 	if (listen(socket_passive, 100) < 0)
@@ -69,7 +70,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		return (-1);
 	}
 	if (long_output)
-		printf("PASS inizio ascolto\n");
+		printf("PASS: inizio loop ascolto\n");
 
 	while (1)
 	{
@@ -84,7 +85,6 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 			return (-1);
 		}
 		printf("- CONNESSIONE STABILITA -\n");
-
 		while (server_send_file_to_client(socket_son) > 0);
 		printf("- CONNESSIONE CHIUSA -\n");
 	}
