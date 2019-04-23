@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #include "../send_file.h"
 #include "../sockwrap.h"
@@ -101,6 +102,9 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
                 return (0);
             }
+			waitpid(pid_son,&i,0);
+			if(long_output)
+				printf("PASS: processo figlio terminato\n");
 		}
 		else //figlio
 		{	
