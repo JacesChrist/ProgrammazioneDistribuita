@@ -15,12 +15,12 @@
 char *prog_name;
 
 int buffer_size = 100;
-int long_output = 0;
+int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	char *buf;
-	int socket_passive, socket_son,i;
+	int socket_passive, socket_son,i,pid_son;
 	struct sockaddr_in server_address;
 	socklen_t address_length;
 
@@ -84,11 +84,34 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 			return (-1);
 		}
-		printf("- CONNESSIONE STABILITA -\n");
-		while ((i = server_send_file_to_client(socket_son)) > 0);
-		if(i == -1)
-			printf("- CONNESSIONE INTERROTTA -\n");
+		
+		//fork
+		if((pid_son = fork()) < 0)
+		{
+			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+			return (-1);
+		}
+		if(pid_son>0)
+		{
+			if(long_output)
+				printf("PASS: fork effettuata\n");
+			if (close(socket_son) != 0)
+            {
+                if (long_output)
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                return (0);
+            }
+		}
+		else //figlio
+		{	
+			printf("- CONNESSIONE STABILITA -\n");
+			while ((i = server_send_file_to_client(socket_son)) > 0);
+			if(i == -1)
+				printf("- CONNESSIONE INTERROTTA -\n");
+			if(long_output)
+				printf("PASS: processo terminato\n");
+			exit(0);
+		}
 	}
-
 	return 0;
 }
