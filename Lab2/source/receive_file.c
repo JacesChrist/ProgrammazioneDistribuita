@@ -40,7 +40,6 @@ int client_receive_file_from_server(int socket, char *file_name)
     }
     if (long_output)
         printf("PASS: GET' ' inviato\n");
-    //sleep(10);
     if (send(socket, file_name, strlen(file_name), MSG_NOSIGNAL) != strlen(file_name))
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
@@ -48,7 +47,6 @@ int client_receive_file_from_server(int socket, char *file_name)
     }
     if (long_output)
         printf("PASS: nome file inviato\n");
-    //sleep(10);
     if (send(socket, "\r\n", 2, MSG_NOSIGNAL) != 2)
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
@@ -238,6 +236,12 @@ int client_receive_file_from_server(int socket, char *file_name)
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                     return (-1);
                 }
+                if (fprintf(file, "%s", buffer) < 0)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                received_byte += buffer_size;
             }
             else
             {
@@ -255,12 +259,6 @@ int client_receive_file_from_server(int socket, char *file_name)
                 }
                 return (-1);
             }
-            if (fprintf(file, "%s", buffer) < 0)
-            {
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                return (-1);
-            }
-            received_byte += buffer_size;
         }
         else
         {
@@ -278,6 +276,13 @@ int client_receive_file_from_server(int socket, char *file_name)
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                     return (-1);
                 }
+                if (fprintf(file, "%s", buf) < 0)
+                {
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+                    return (-1);
+                }
+                free(buf);
+                break;
             }
             else
             {
@@ -295,13 +300,6 @@ int client_receive_file_from_server(int socket, char *file_name)
                 }
                 return (-1);
             }
-            if (fprintf(file, "%s", buf) < 0)
-            {
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                return (-1);
-            }
-            free(buf);
-            break;
         }
     }
     if (fclose(file) != 0)
@@ -310,7 +308,6 @@ int client_receive_file_from_server(int socket, char *file_name)
             printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
         return (-1);
     }
-    free(buf);
     if (long_output)
         printf("PASS: file scritto\n");
 
