@@ -15,7 +15,6 @@
 
 #include "receive_file.h"
 #include "sockwrap.h"
-#include "errlib.h"
 
 int extern buffer_size;
 int extern long_output;
@@ -231,47 +230,27 @@ int server_send_file_to_client(int socket)
     //scansione-invio file
     sent_byte = 0;
     printf("- INVIO IN CORSO -\n");
-    while (1)
+    buf = malloc(dimension * sizeof(char));
+    if(fread(buf,1,dimension,file) != dimension)
     {
-        if ((dimension - sent_byte) > buffer_size)
-        {
-            if (fread(buffer, buffer_size, 1, file) != 1)
-            {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                serverSendErr(socket);
-                return (0);
-            }
-            if (send(socket, buffer, buffer_size, MSG_NOSIGNAL) != buffer_size) //a volte faila, probabilmente si spacca il socket
-            {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                serverSendErr(socket);
-                return (0);
-            }
-            sent_byte += buffer_size;
-        }
-        else
-        {
-            buf = malloc((dimension - sent_byte) * sizeof(char));
-            if (fread(buf, (dimension - sent_byte), 1, file) != 1)
-            {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                serverSendErr(socket);
-                return (0);
-            }
-            if (send(socket, buf, (dimension - sent_byte), MSG_NOSIGNAL) != (dimension - sent_byte))
-            {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                serverSendErr(socket);
-                return (0);
-            }
-            free(buf);
-            break;
-        }
+        if (long_output)
+            printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+        serverSendErr(socket);
+        return (0);
     }
+    for(sent_byte=0;sent_byte==dimension;)
+    {
+        if(i = send(socket, buffer, buffer_size, MSG_NOSIGNAL) == -1)
+        {
+            if (long_output)
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+            serverSendErr(socket);
+            return (0);
+        }
+        sent_byte += i;
+    }
+    free(buf);
+
     printf("- FILE INVIATO -\n");
 
     //invio timestamp

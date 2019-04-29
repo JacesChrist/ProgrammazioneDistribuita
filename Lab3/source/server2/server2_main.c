@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -13,13 +14,18 @@
 #include "../send_file.h"
 #include "../sockwrap.h"
 
+void zombie_hunter(int);
+
 char *prog_name;
 
-int buffer_size = 100;
+int buffer_size = 1000000;
 int long_output = 1;
+int fork_counter = 0;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
+	signal(SIGCHLD,zombie_hunter);
+
 	char *buf;
 	int socket_passive, socket_son,i,pid_son;
 	struct sockaddr_in server_address;
@@ -72,11 +78,11 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 	}
 	if (long_output)
 		printf("PASS: inizio loop ascolto\n");
+	fork_counter = 0;
+	printf("- IN ATTESA DI CONNESSIONE -\n");
 
 	while (1)
 	{
-		printf("- IN ATTESA DI CONNESSIONE -\n");
-
 		//accettazione connesione
 		address_length = sizeof(struct sockaddr_in);
 		socket_son = accept(socket_passive, (struct sockaddr *)&server_address, &address_length);
@@ -92,30 +98,52 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 			printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
 			return (-1);
 		}
-		if(pid_son>0)
+		fork_counter++;
+		if(pid_son>0) //padre
 		{
 			if(long_output)
-				printf("PASS: fork effettuata\n");
+				printf("PASS: fork effettuata %d\n",pid_son);
 			if (close(socket_son) != 0)
             {
                 if (long_output)
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
                 return (0);
-            }
-			waitpid(pid_son,&i,0);
-			if(long_output)
-				printf("PASS: processo figlio terminato\n");
+            }			
 		}
 		else //figlio
 		{	
+			if (close(socket_passive) != 0)
+            {
+                if (long_output)
+                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                return (0);
+            }		
 			printf("- CONNESSIONE STABILITA -\n");
 			while ((i = server_send_file_to_client(socket_son)) > 0);
 			if(i == -1)
 				printf("- CONNESSIONE INTERROTTA -\n");
 			if(long_output)
-				printf("PASS: processo terminato\n");
+				printf("PASS: terminazione processo figlio %d\n",getpid());
 			exit(0);
 		}
 	}
 	return 0;
+}
+
+void zombie_hunter(int signal)
+{
+	if (signal != SIGCHLD) 
+	{
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+	}
+	else
+	{
+		wait(NULL);
+		if(long_output)
+				printf("PASS: processo zombie terminato\n");
+		fork_counter--;
+		if(fork_counter == 0)
+			printf("- IN ATTESA DI CONNESSIONE -\n");
+	}
+	return;
 }

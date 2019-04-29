@@ -12,14 +12,13 @@
 
 #include "receive_file.h"
 #include "sockwrap.h"
-#include "errlib.h"
 
 int extern buffer_size;
 int extern long_output;
 
 int client_receive_file_from_server(int socket, char *file_name)
 {
-    int secTimer = 15, res_sel;
+    int secTimer = 15, res_sel,i;
     char *buf, buffer[buffer_size];
     unsigned long received_byte;
     FILE *file;
@@ -219,89 +218,25 @@ int client_receive_file_from_server(int socket, char *file_name)
         printf("PASS: file creato\n");
     printf("- RICEZIONE IN CORSO -\n");
     received_byte = 0;
-    while (1)
+    buf = malloc(dimension * sizeof(char));
+    for(received_byte=0;received_byte==dimension;)
     {
-        if ((dimension - received_byte) > buffer_size)
+        if(i = recv(socket, buffer, buffer_size, 0) == -1)
         {
-            res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
-            if (res_sel == -1)
-            {
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                return (-1);
-            }
-            if (res_sel > 0)
-            {
-                if (recv(socket, buffer, buffer_size, 0) != buffer_size) //a volte faila, probabilmente si spacca il socket
-                {
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                    return (-1);
-                }
-                if (fprintf(file, "%s", buffer) < 0)
-                {
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                    return (-1);
-                }
-                received_byte += buffer_size;
-            }
-            else
-            {
-                printf("- TIMEOUT CONNESSIONE -\n");
-                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
-                {
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                    return (-1);
-                }
-                if (close(socket) != 0)
-                {
-                    if (long_output)
-                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                    return (-1);
-                }
-                return (-1);
-            }
+            if (long_output)
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+            return (0);
         }
-        else
-        {
-            buf = malloc((dimension - received_byte) * sizeof(char));
-            res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
-            if (res_sel == -1)
-            {
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                return (-1);
-            }
-            if (res_sel > 0)
-            {
-                if (recv(socket, buf, (dimension - received_byte), 0) != (dimension - received_byte))
-                {
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                    return (-1);
-                }
-                if (fprintf(file, "%s", buf) < 0)
-                {
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                    return (-1);
-                }
-                free(buf);
-                break;
-            }
-            else
-            {
-                printf("- TIMEOUT CONNESSIONE -\n");
-                if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
-                {
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
-                    return (-1);
-                }
-                if (close(socket) != 0)
-                {
-                    if (long_output)
-                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                    return (-1);
-                }
-                return (-1);
-            }
-        }
+        received_byte += i;
     }
+    if (fwrite(buf, 1, dimension, file) < 0)
+    {
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (-1);
+    }
+    free(buf);
+
+
     if (fclose(file) != 0)
     {
         if (long_output)
@@ -391,7 +326,7 @@ int client_receive_file_from_server(int socket, char *file_name)
     struct tm *timestamp_format;
     timestamp_format = localtime(&ts);
     strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", timestamp_format);
-    printf("- ULTIMA MODIFICA FILE: %s -\n", buffer);
+    printf("- RICEVUTO FILE: %s -\n", buffer);
 
     return (1);
 }
