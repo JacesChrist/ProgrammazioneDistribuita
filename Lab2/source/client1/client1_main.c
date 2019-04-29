@@ -1,157 +1,94 @@
-/*
- * TEMPLATE
- * parametri:
- * - indirizzo
- * - porta
- * - file (n)
- */
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
 
-char *prog_name;
-int long_output = 1;
+#include <sys/socket.h>
 
-void clientError(int);
+#include "../receive_file.h"
+#include "../sockwrap.h"
+
+char *prog_name;
+
+int buffer_size = 100;
+int long_output = 0;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
-	int i, bar1, bar2;
-	unsigned long int uli[1];
-	char car[1], c, *buf;
-	FILE *file;
+	int i, socket_client;
+	char *buf;
+	struct sockaddr_in client_address;
 
 	printf("* CLIENT TCP *\n");
 
 	//controllo argomenti linea di comando
 	if (argc < 3)
-		clientError(1);
-	if (atoi(argv[2]) <= 1024)
-		clientError(5);
+	{
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		return (-1);
+	}
+	if (atoi(argv[2]) < 1024)
+	{
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		return (-1);
+	}
 	if (argc == 3)
-		clientError(2);
+	{
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		return (-1);
+	}
 	if (long_output)
-		printf("PASS parametri linea di comando\n");
+		printf("PASS: parametri linea di comando\n");
 
 	//creazione socket
-	int client_socket = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (client_socket < 0)
-		clientError(3);
+	socket_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (socket_client < 0)
+	{
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		return (-1);
+	}
 	if (long_output)
-		printf("PASS creazione socket\n");
+		printf("PASS: creazione socket\n");
 
 	//definizione indirizzo
-	struct sockaddr_in client_address;
 	client_address.sin_family = AF_INET;
 	client_address.sin_port = htons(atoi(argv[2]));
 	client_address.sin_addr.s_addr = inet_addr(argv[1]);
 	if (long_output)
-		printf("PASS definizione indirizzo\n");
+		printf("PASS: definizione indirizzo\n");
 
 	//connessione dei socket
-	if (connect(client_socket, (struct sockaddr *)&client_address, sizeof(client_address)) == -1)
-		clientError(4);
+	if (connect(socket_client, (struct sockaddr *)&client_address, sizeof(client_address)) == -1)
+	{
+		printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+		return (-1);
+	}
 	printf("- CONNESSIONE STABILITA -\n");
 
 	//protocollo di connessione
 
-	for (i = 0; i < (argc - 3); i++)
+	for (i = 3; i < argc; i++)
 	{
-		send(client_socket, "GET ", 4, MSG_NOSIGNAL);
-		if (long_output)
-			printf("PASS G E T ' ' inviato\n");
-		send(client_socket, argv[3 + i], strlen(argv[3 + i]) + 1, MSG_NOSIGNAL);
-		if (long_output)
-			printf("PASS nome file inviato\n");
-		car[0] = 10;
-		send(client_socket, car, 1, MSG_NOSIGNAL);
-		car[0] = 13;
-		send(client_socket, car, 1, MSG_NOSIGNAL);
-		if (long_output)
-			printf("PASS CR LF inviato\n");
-		printf("- RICHIESTO FILE '%s' -\n", argv[3 + i]);
-		buf = malloc(3 * sizeof(char));
-		recv(client_socket, buf, 3, 0);
-		if (strcmp(buf, "+OK") == 0)
+		if (client_receive_file_from_server(socket_client, argv[i]) < 0)
 		{
-			free(buf);
 			if (long_output)
-				printf("PASS + O K ricevuto\n");
-			recv(client_socket, &uli[0], 4, 0);
-			if (long_output)
-				printf("PASS dimensione '%lu' Byte ricevuta\n", uli[0]);
-			file = fopen(argv[3 + i], "w");
-			if (file == NULL)
-				clientError(7);
-			else
+				printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+			if (close(socket_client) != 0)
 			{
 				if (long_output)
-					printf("PASS file creato\n");
-				printf("- RICEZIONE IN CORSO ");
-				bar1 = uli[0] / 10;
-				for (i = 0; i < uli[0]; i++)
-				{
-					fflush(stdout);
-					recv(client_socket, &c, 1, 0);
-					fprintf(file, "%c", c);
-					if (i == bar2)
-					{
-						printf("#");
-						bar2 += bar1;
-					}
-				}
-				printf(" -\n");
-				fclose(file);
-				if (long_output)
-					printf("PASS file scritto\n");
+					printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+				return (-1);
 			}
+			return (-1);
 		}
-		else
-			clientError(6);
+	}
+	if (close(socket_client) != 0)
+	{
+		if (long_output)
+			printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+		return (-1);
 	}
 	printf("- CONNESSIONE CHIUSA -\n");
 
 	return 0;
-}
-
-void clientError(int codErr)
-{
-	switch (codErr)
-	{
-	case 1:
-		printf("Errore: numero di parametri insufficiente\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 2:
-		printf("Nessun file specificato da trasferire\n");
-		printf("Terminazione client\n");
-		exit(1);
-	case 3:
-		printf("Socket non creato correttamente\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 4:
-		printf("Connessione tra socket fallita\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 5:
-		printf("'sudo' richiesto per la porta specificata\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 6:
-		printf("Connessione tramite protocollo fallita\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	case 7:
-		printf("File non aperto correttamente\n");
-		printf("Terminazione client\n");
-		exit(-1);
-
-		printf("Errore non gestito\n");
-		printf("Terminazione client\n");
-		exit(-1);
-	}
 }
