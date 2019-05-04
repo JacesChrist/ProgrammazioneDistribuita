@@ -49,7 +49,6 @@ int server_send_file_to_client(int socket)
     }
     if (long_output)
         printf("PASS: timer inizializzato\n");
-
     if (res_sel > 0)
     {
         //ricezione G E T ' '
@@ -238,9 +237,9 @@ int server_send_file_to_client(int socket)
         serverSendErr(socket);
         return (0);
     }
-    for(sent_byte=0;sent_byte==dimension;)
+    for(sent_byte=0;sent_byte!=dimension;)
     {
-        if(i = send(socket, buffer, buffer_size, MSG_NOSIGNAL) == -1)
+        if((i = send(socket, buf, dimension-sent_byte, MSG_NOSIGNAL)) == -1)
         {
             if (long_output)
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);

@@ -219,9 +219,9 @@ int client_receive_file_from_server(int socket, char *file_name)
     printf("- RICEZIONE IN CORSO -\n");
     received_byte = 0;
     buf = malloc(dimension * sizeof(char));
-    for(received_byte=0;received_byte==dimension;)
+    for(received_byte=0;received_byte!=dimension;)
     {
-        if(i = recv(socket, buffer, buffer_size, 0) == -1)
+        if((i = recv(socket, buf, dimension-received_byte, 0)) == -1)
         {
             if (long_output)
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
