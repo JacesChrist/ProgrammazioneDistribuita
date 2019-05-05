@@ -18,8 +18,8 @@ void zombie_hunter(int);
 
 char *prog_name;
 
-int buffer_size = 50;
-int long_output = 1;
+int buffer_size = 100;
+int long_output = 0;
 int fork_counter = 0;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
