@@ -16,11 +16,13 @@
 int extern buffer_size;
 int extern long_output;
 
+int client_receive_file_from_server(int , char *);
+int for_receive(int,int,char*);
+
 int client_receive_file_from_server(int socket, char *file_name)
 {
     int secTimer = 15, res_sel,i;
     char *buf, buffer[buffer_size];
-    unsigned long received_byte;
     FILE *file;
     uint32_t dimension, timestamp;
     struct timeval tval;
@@ -217,17 +219,11 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output)
         printf("PASS: file creato\n");
     printf("- RICEZIONE IN CORSO -\n");
-    received_byte = 0;
     buf = malloc(dimension * sizeof(char));
-    for(received_byte=0;received_byte!=dimension;)
+    if(for_receive(socket,dimension,buf) == -1)
     {
-        if((i = recv(socket, buf, dimension-received_byte, 0)) == -1)
-        {
-            if (long_output)
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-            return (0);
-        }
-        received_byte += i;
+        printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
+        return (-1);
     }
     if (fwrite(buf, 1, dimension, file) < 0)
     {
@@ -330,3 +326,21 @@ int client_receive_file_from_server(int socket, char *file_name)
 
     return (1);
 }
+
+int for_receive(int socket,int dimension,char *buf)
+{
+    unsigned long int i,received_byte=0;
+
+    for(received_byte=0;received_byte!=dimension;)
+    {
+        if((i = recv(socket, buf, dimension-received_byte, 0)) == -1)
+        {
+            if (long_output)
+                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+            return (-1);
+        }
+        received_byte += i;
+    }
+    return(0);
+}
+
