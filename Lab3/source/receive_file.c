@@ -17,12 +17,11 @@ int extern buffer_size;
 int extern long_output;
 
 int client_receive_file_from_server(int , char *);
-int for_receive(int,int,char*);
 
 int client_receive_file_from_server(int socket, char *file_name)
 {
     int secTimer = 15, res_sel;
-    unsigned long int i;
+    unsigned long int i,j,received_byte;
     char *buf, buffer[buffer_size],buf5[5],buf4[4];
     FILE *file;
     uint32_t dimension, timestamp;
@@ -154,40 +153,46 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output)
         printf("PASS: file creato\n");
     printf("- RICEZIONE IN CORSO -\n");
-    i = 0;
-    while(1)
+    for(received_byte = 0;received_byte != dimension;)
     {
-        if((dimension - i) > buffer_size)
+        if((dimension-received_byte) >= buffer_size)
         {
-            if(for_receive(socket,buffer_size,buffer) == -1)
+            for(i=0;i!=buffer_size;)
             {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (-1);
+                if((j = recv(socket, buffer, buffer_size, 0)) == -1)
+                {
+                    if (long_output)
+                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                    return (-1);
+                }
+                i += j;
             }
             if (fwrite(buffer, 1, buffer_size, file) < 0)
             {
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                 return (-1);
             }
-            i += buffer_size;
+            received_byte += buffer_size;
         }
         else
         {
-            buf = malloc((dimension - i)*sizeof(char));
-            if(for_receive(socket,(dimension - i),buf) == -1)
+            printf("aaaaaaaaaaa");
+            for(i=0;i!=(dimension-received_byte);)
             {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                return (-1);
+                if((j = recv(socket, buffer,(dimension-received_byte), 0)) == -1)
+                {
+                    if (long_output)
+                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                    return (-1);
+                }
+                i += j;
             }
-            if (fwrite(buf, 1, (dimension - i), file) < 0)
+            if (fwrite(buffer, 1, (dimension-i), file) < 0)
             {
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                 return (-1);
             }
-            //free(buf);
-            break;
+            received_byte += (dimension-received_byte);
         }
     }
     if (fclose(file) != 0)
@@ -248,21 +253,3 @@ int client_receive_file_from_server(int socket, char *file_name)
 
     return (1);
 }
-
-int for_receive(int socket,int dimension,char *buf)
-{
-    unsigned long int i,received_byte=0;
-
-    for(received_byte=0;received_byte!=dimension;)
-    {
-        if((i = recv(socket, buf, dimension-received_byte, 0)) == -1)
-        {
-            if (long_output)
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-            return (-1);
-        }
-        received_byte += i;
-    }
-    return(0);
-}
-
