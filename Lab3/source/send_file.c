@@ -27,7 +27,7 @@ int server_send_file_to_client(int socket)
 {
     int secTimer = 15, res_sel, ultima_modifica;
     unsigned long int dimension,i;
-    char nome_file[50], *buf, buffer[buffer_size], stringa[4];
+    char nome_file[50], *buf, buffer[buffer_size], buf4[4];
     FILE *file;
     uint32_t size, timestamp;
     struct stat stats;
@@ -53,7 +53,7 @@ int server_send_file_to_client(int socket)
     if (res_sel > 0)
     {
         //ricezione G E T ' '
-        if (recv(socket, stringa, 4, 0) != 4)
+        if (recv(socket, buf4, 4, 0) != 4)
         {
             if (close(socket) != 0)
             {
@@ -68,7 +68,7 @@ int server_send_file_to_client(int socket)
             serverSendErr(socket);
             return (0);
         }
-        if (strncmp(stringa, "GET ", 4) != 0)
+        if (strncmp(buf4, "GET ", 4) != 0)
         {
             if (long_output)
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);

@@ -23,7 +23,7 @@ int client_receive_file_from_server(int socket, char *file_name)
 {
     int secTimer = 15, res_sel;
     unsigned long int i;
-    char *buf, buffer[buffer_size];
+    char *buf, buffer[buffer_size],buf5[5],buf4[4];
     FILE *file;
     uint32_t dimension, timestamp;
     struct timeval tval;
@@ -57,7 +57,6 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output)
         printf("PASS: CR LF inviato\n");
     printf("- RICHIESTO FILE '%s' -\n", file_name);
-    buf = malloc(5 * sizeof(char));
     res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
     if (res_sel == -1)
     {
@@ -68,7 +67,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         printf("PASS: timer inizializzato\n");
     if (res_sel > 0)
     {
-        if (recv(socket, buf, 5, 0) != 5)
+        if (recv(socket, buf5, 5, 0) != 5)
         {
             printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
             return (-1);
@@ -85,7 +84,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         }
         return (-1);
     }
-    if (buf[0] == '-')
+    if (buf5[0] == '-')
     {
         printf("- ERRORE RICHIESTA -\n");
         if (close(socket) != 0)
@@ -96,16 +95,14 @@ int client_receive_file_from_server(int socket, char *file_name)
         }
         exit(1);
     }
-    if (strncmp(buf, "+OK\r\n", 5) != 0)
+    if (strncmp(buf5, "+OK\r\n", 5) != 0)
     {
         printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
         return (-1);
     }
-    free(buf);
     if (long_output)
         printf("PASS: +OK ricevuto\n");
 
-    buf = malloc(4 * sizeof(char));
     res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
     if (res_sel == -1)
     {
@@ -116,7 +113,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         printf("PASS: timer inizializzato\n");
     if (res_sel > 0)
     {
-        if (recv(socket, buf, 4, 0) != 4)
+        if (recv(socket, buf4, 4, 0) != 4)
         {
             printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
             return (-1);
@@ -133,7 +130,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         }
         return (-1);
     }
-    if (buf[0] == '-')
+    if (buf4[0] == '-')
     {
         printf("- ERRORE RICHIESTA -\n");
         if (close(socket) != 0)
@@ -144,8 +141,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         }
         exit(1);
     }
-    dimension = ntohl((*(uint32_t *)buf));
-    free(buf);
+    dimension = ntohl((*(uint32_t *)buf4));
     if (long_output)
         printf("PASS: dimensione '%u' Byte ricevuta\n", dimension);
     file = fopen(file_name, "w");
@@ -190,7 +186,7 @@ int client_receive_file_from_server(int socket, char *file_name)
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                 return (-1);
             }
-            free(buf);
+            //free(buf);
             break;
         }
     }
@@ -203,7 +199,6 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output)
         printf("PASS: file scritto\n");
 
-    buf = malloc(4 * sizeof(char));
     res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
     if (res_sel == -1)
     {
@@ -214,7 +209,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         printf("PASS: timer inizializzato\n");
     if (res_sel > 0)
     {
-        if (recv(socket, buf, 4, 0) != 4)
+        if (recv(socket, buf4, 4, 0) != 4)
         {
             printf("FATAL ERROR: line %d - file '%s'\n", __LINE__ - 1, __FILE__);
             return (-1);
@@ -231,7 +226,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         }
         return (-1);
     }
-    if (buf[0] == '-')
+    if (buf4[0] == '-')
     {
         printf("- ERRORE RICHIESTA -\n");
         if (close(socket) != 0)
@@ -244,8 +239,7 @@ int client_receive_file_from_server(int socket, char *file_name)
     }
     if (long_output)
         printf("PASS: timestamp ricevuto\n");
-    timestamp = ntohl((*(uint32_t *)buf));
-    free(buf);
+    timestamp = ntohl((*(uint32_t *)buf4));
     time_t ts = timestamp;
     struct tm *timestamp_format;
     timestamp_format = localtime(&ts);

@@ -16,7 +16,6 @@ int long_output = 1;
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)
 {
 	int i, socket_client;
-	char *buf;
 	struct sockaddr_in client_address;
 
 	printf("* CLIENT TCP *\n");
