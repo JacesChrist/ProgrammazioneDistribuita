@@ -21,13 +21,12 @@ int extern long_output;
 
 int server_send_file_to_client(int);
 void serverSendErr(int);
-int for_send(int,int,char *);
 
 int server_send_file_to_client(int socket)
 {
     int secTimer = 15, res_sel, ultima_modifica;
-    unsigned long int dimension,i;
-    char nome_file[50], *buf, buffer[buffer_size], buf4[4];
+    unsigned long int dimension,i,j,sent_byte;
+    char nome_file[50], buffer[buffer_size], buf4[4];
     FILE *file;
     uint32_t size, timestamp;
     struct stat stats;
@@ -226,10 +225,9 @@ int server_send_file_to_client(int socket)
         printf("PASS: dimensione '%lu' Byte inviata\n", dimension);
     //scansione-invio file
     printf("- INVIO IN CORSO -\n");
-    i = 0;
-    while(i != dimension)
+    for(sent_byte = 0;sent_byte != dimension;)
     {
-        if((dimension - i) > buffer_size)
+        if((dimension - sent_byte) >= buffer_size)
         {
             if(fread(buffer,1,buffer_size,file) != buffer_size)
             {
@@ -238,34 +236,40 @@ int server_send_file_to_client(int socket)
                 serverSendErr(socket);
                 return (0);
             }
-            if(for_send(socket,buffer_size,buffer) == -1)
+            for(i=0;i!=buffer_size;)
             {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                serverSendErr(socket);
-                return (0);
+                if((j = send(socket, buffer, (buffer_size-i), MSG_NOSIGNAL)) == -1)
+                {
+                    if (long_output)
+                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                    serverSendErr(socket);
+                    return (-1);
+                }
+                i += j;
             }
-            i += buffer_size;
+            sent_byte += buffer_size;
         }
         else
         {
-            buf = malloc((dimension - i)*sizeof(char));
-            if(fread(buf,1,(dimension - i),file) != (dimension - i))
+            if(fread(buf,1,(dimension - sent_byte),file) != (dimension - sent_byte))
             {
                 if (long_output)
                     printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
                 serverSendErr(socket);
                 return (0);
             }
-            if(for_send(socket,(dimension - i),buf) == -1)
+            for(i=0;i!=(dimension - sent_byte);)
             {
-                if (long_output)
-                    printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-                serverSendErr(socket);
-                return (0);
+                if((j = send(socket, buffer, (buffer_size-sent_byte-i), MSG_NOSIGNAL)) == -1)
+                {
+                    if (long_output)
+                        printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
+                    serverSendErr(socket);
+                    return (-1);
+                }
+                i += j;
             }
-            i += (dimension - i);
-            free(buf);
+            sent_byte += (dimension-sent_byte);
         }
     }
 
@@ -316,22 +320,3 @@ void serverSendErr(int socket_error)
     }
     return;
 }
-
-int for_send(int socket,int dimension,char *buf)
-{
-    unsigned long int sent_byte=0,i;
-
-    for(sent_byte=0;sent_byte!=dimension;)
-    {
-        if((i = send(socket, buf, dimension-sent_byte, MSG_NOSIGNAL)) == -1)
-        {
-            if (long_output)
-                printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-            serverSendErr(socket);
-            return (-1);
-        }
-        sent_byte += i;
-    }
-    return(0);
-}
-

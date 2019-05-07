@@ -18,7 +18,7 @@ void zombie_hunter(int);
 
 char *prog_name;
 
-int buffer_size = 100;
+int buffer_size = 1500;
 int long_output = 1;
 int fork_counter = 0;
 

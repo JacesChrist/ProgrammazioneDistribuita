@@ -14,7 +14,7 @@
 
 char *prog_name;
 
-int buffer_size = 100;
+int buffer_size = 1500;
 int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta

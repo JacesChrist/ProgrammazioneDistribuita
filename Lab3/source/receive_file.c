@@ -159,13 +159,15 @@ int client_receive_file_from_server(int socket, char *file_name)
         {
             for(i=0;i!=buffer_size;)
             {
-                if((j = recv(socket, buffer, buffer_size, 0)) == -1)
+                if((j = recv(socket, buffer, (buffer_size-i), 0)) == -1)
                 {
                     if (long_output)
                         printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
                     return (-1);
                 }
                 i += j;
+                printf("bbb");
+                fflush(stdout);
             }
             if (fwrite(buffer, 1, buffer_size, file) < 0)
             {
@@ -173,13 +175,15 @@ int client_receive_file_from_server(int socket, char *file_name)
                 return (-1);
             }
             received_byte += buffer_size;
+            printf("%lu %lu\n",j,received_byte);
         }
         else
         {
-            printf("aaaaaaaaaaa");
+            printf("aaa");
+            fflush(stdout);
             for(i=0;i!=(dimension-received_byte);)
             {
-                if((j = recv(socket, buffer,(dimension-received_byte), 0)) == -1)
+                if((j = recv(socket, buffer,(dimension-received_byte-i), 0)) == -1)
                 {
                     if (long_output)
                         printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
@@ -187,7 +191,7 @@ int client_receive_file_from_server(int socket, char *file_name)
                 }
                 i += j;
             }
-            if (fwrite(buffer, 1, (dimension-i), file) < 0)
+            if (fwrite(buffer, 1, (dimension-received_byte), file) < 0)
             {
                 printf("ERROR: line %d - file '%s'\n", __LINE__ - 2, __FILE__);
                 return (-1);
