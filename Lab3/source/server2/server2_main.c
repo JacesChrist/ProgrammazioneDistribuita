@@ -19,14 +19,13 @@ void zombie_hunter(int);
 char *prog_name;
 
 int buffer_size = 100;
-int long_output = 0;
+int long_output = 1;
 int fork_counter = 0;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	signal(SIGCHLD,zombie_hunter);
 
-	char *buf;
 	int socket_passive, socket_son,i,pid_son;
 	struct sockaddr_in server_address;
 	socklen_t address_length;

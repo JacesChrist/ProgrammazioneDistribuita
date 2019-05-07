@@ -15,11 +15,10 @@
 char *prog_name;
 
 int buffer_size = 100;
-int long_output = 0;
+int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
-	char *buf;
 	int socket_passive, socket_son,i;
 	struct sockaddr_in server_address;
 	socklen_t address_length;

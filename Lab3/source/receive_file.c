@@ -161,7 +161,6 @@ int client_receive_file_from_server(int socket, char *file_name)
     i = 0;
     while(1)
     {
-        sleep(1);
         if((dimension - i) > buffer_size)
         {
             if(for_receive(socket,buffer_size,buffer) == -1)
