@@ -10,7 +10,7 @@
 
 char *prog_name;
 
-int buffer_size = 100;
+int buffer_size = 150;
 int long_output = 1;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(da 0 a n)

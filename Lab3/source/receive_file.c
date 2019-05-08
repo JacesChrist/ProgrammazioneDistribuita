@@ -21,11 +21,11 @@ int client_receive_file_from_server(int , char *);
 int client_receive_file_from_server(int socket, char *file_name)
 {
     int secTimer = 15, res_sel;
-    unsigned long int i,j,received_byte;
-    char *buf, buffer[buffer_size],buf5[5],buf4[4];
-    FILE *file;
+    size_t i,received_byte;
+    char buffer[buffer_size],buf5[5],buf4[4];
     uint32_t dimension, timestamp;
     struct timeval tval;
+    FILE *file;
 
     //inizializzazione timer
     fd_set cset;
@@ -87,34 +87,22 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (file == NULL) return(-1);
     if (long_output) printf("PASS: file creato\n");
     printf("- RICEZIONE IN CORSO -\n");
-    for(received_byte = 0;received_byte != dimension;)
+    received_byte = 0;
+    while(received_byte < dimension)
     {
         memset(buffer, 0, buffer_size);
-        if((dimension-received_byte) >= buffer_size)
+        if((dimension - received_byte) >= buffer_size)
         {
-            for(i=0;i!=buffer_size;)
-            {
-                if((j = read(socket, buffer, (buffer_size-i))) == -1) return(-1);
-                i += j;
-            }
-            if (fwrite(buffer, 1, buffer_size, file) < 0) return(-1);
+            if(readn(socket,buffer,buffer_size) != buffer_size) return(-1);
+            if(fwrite(buffer, 1, buffer_size, file) != buffer_size) return(-1);
             received_byte += buffer_size;
         }
         else
         {
-            printf("aaa");
-            for(i=0;i!=(dimension-received_byte);)
-            {
-                printf("bbb");
-                if((j = read(socket, buffer,(dimension-received_byte-i))) == -1) return(-1);
-                i += j;
-                printf("--- %lu ---",i);
-            }
-            if (fwrite(buffer, 1, (dimension-received_byte), file) < 0) return(-1);
+            if(readn(socket,buffer,(dimension-received_byte)) != (dimension-received_byte)) return(-1);            
+            if(fwrite(buffer, 1, (dimension-received_byte), file) != (dimension-received_byte)) return(-1);
             received_byte += (dimension-received_byte);
-            printf("ccc");
         }
-        printf("%lu %lu\n",j,received_byte);
     }
     if (fclose(file) != 0) return(-1);
     if (long_output) printf("PASS: file scritto\n");

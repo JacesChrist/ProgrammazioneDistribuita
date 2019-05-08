@@ -25,12 +25,13 @@ void serverSendErr(int);
 int server_send_file_to_client(int socket)
 {
     int secTimer = 15, res_sel, ultima_modifica;
-    unsigned long int dimension,i,j,sent_byte;
+    size_t dimension,i,sent_byte;
     char nome_file[50], buffer[buffer_size], buf4[4];
     FILE *file;
     uint32_t size, timestamp;
     struct stat stats;
     struct timeval tval;
+
     //inizializzazione timer
     fd_set cset;
     FD_ZERO(&cset);
@@ -161,43 +162,20 @@ int server_send_file_to_client(int socket)
     if (long_output) printf("PASS: dimensione '%lu' Byte inviata\n", dimension);
     //scansione-invio file
     printf("- INVIO IN CORSO -\n");
-    for(sent_byte = 0;sent_byte != dimension;)
+    sent_byte = 0;
+    while(sent_byte < dimension)
     {
         memset(buffer, 0, buffer_size);
         if((dimension - sent_byte) >= buffer_size)
         {
-            if(fread(buffer,1,buffer_size,file) != buffer_size)
-            {
-                serverSendErr(socket);
-                return (0);
-            }
-            for(i=0;i!=buffer_size;)
-            {
-                if((j = write(socket, buffer, (buffer_size-i))) == -1)
-                {
-                    serverSendErr(socket);
-                    return (-1);
-                }
-                i += j;
-            }
+            fread(buffer,1,buffer_size,file);
+            sendn(socket, buffer, buffer_size,0);
             sent_byte += buffer_size;
         }
         else
         {
-            if(fread(buffer,1,(dimension - sent_byte),file) != (dimension - sent_byte))
-            {
-                serverSendErr(socket);
-                return (0);
-            }
-            for(i=0;i!=(dimension - sent_byte);)
-            {
-                if((j = write(socket, buffer, (dimension-sent_byte-i))) == -1)
-                {
-                    serverSendErr(socket);
-                    return (-1);
-                }
-                i += j;
-            }
+            fread(buffer,1,(dimension - sent_byte),file);
+            sendn(socket, buffer, (dimension-sent_byte),0);
             sent_byte += (dimension-sent_byte);
         }
     }
