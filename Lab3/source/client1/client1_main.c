@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma indirizzo porta file(
 	//connessione dei socket
 	if (connect(socket_client, (struct sockaddr *)&client_address, sizeof(client_address)) == -1) return(-1);
 	printf("- CONNESSIONE STABILITA -\n");
-	//protocollo di connessione
+	//protocollo ciclato
 	for (i = 3; i < argc; i++)
 	{
 		if (client_receive_file_from_server(socket_client, argv[i]) < 0) return(-1);

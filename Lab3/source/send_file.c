@@ -168,14 +168,14 @@ int server_send_file_to_client(int socket)
         memset(buffer, 0, buffer_size);
         if((dimension - sent_byte) >= buffer_size)
         {
-            fread(buffer,1,buffer_size,file);
-            sendn(socket, buffer, buffer_size,0);
+            if(fread(buffer,1,buffer_size,file) != buffer_size) return(-1);
+            if(sendn(socket, buffer, buffer_size,0) != buffer_size) return(-1);
             sent_byte += buffer_size;
         }
         else
         {
-            fread(buffer,1,(dimension - sent_byte),file);
-            sendn(socket, buffer, (dimension-sent_byte),0);
+            if(fread(buffer,1,(dimension - sent_byte),file) != (dimension - sent_byte)) return(-1);
+            if(sendn(socket, buffer, (dimension-sent_byte),0) != (dimension - sent_byte)) return(-1);
             sent_byte += (dimension-sent_byte);
         }
     }
