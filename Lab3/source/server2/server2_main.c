@@ -64,26 +64,32 @@ int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 		if(pid_son>0) //padre
 		{
 			if(long_output) printf("PASS: fork effettuata %d\n",pid_son);
+			//chiusura socket figlio
 			if (close(socket_son) != 0) return(0);	
 		}
 		else //figlio
 		{	
+			//chiusura socket padre
 			if (close(socket_passive) != 0) return(0);
 			printf("- CONNESSIONE STABILITA -\n");
+			//loop protocollo
 			while ((i = server_send_file_to_client(socket_son)) > 0);
 			if(i == -1) printf("- CONNESSIONE INTERROTTA -\n");
 			if(long_output) printf("PASS: terminazione processo figlio %d\n",getpid());
+			//chiusura con successo
 			exit(0);
 		}
 	}
-	return 0;
+	//mai raggiunto
 }
 
 void zombie_hunter(int signal)
 {
+	//terminazione zombie figlio
 	wait(NULL);
 	if(long_output) printf("PASS: processo zombie terminato\n");
 	fork_counter--;
+	//contatore per output in caso di assenza figli
 	if(fork_counter == 0) printf("- IN ATTESA DI CONNESSIONE -\n");
 	return;
 }

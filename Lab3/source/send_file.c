@@ -38,6 +38,7 @@ int server_send_file_to_client(int socket)
     FD_SET(socket, &cset);
     tval.tv_sec = secTimer;
     tval.tv_usec = 0;
+    if (long_output) printf("PASS: timer inizializzato\n");
     //timer
     res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
     if (res_sel == -1)
@@ -45,10 +46,10 @@ int server_send_file_to_client(int socket)
         serverSendErr(socket);
         return (0);
     }
-    if (long_output) printf("PASS: timer inizializzato\n");
+    if (long_output) printf("PASS: timer settato\n");
     if (res_sel > 0)
     {
-        //ricezione G E T ' '
+        //ricezione "GET "
         if (read(socket, buf4, 4) != 4)
         {
             close(socket);
@@ -79,7 +80,7 @@ int server_send_file_to_client(int socket)
             serverSendErr(socket);
             return (0);
         }
-        if (long_output) printf("PASS: timer inizializzato\n");
+        if (long_output) printf("PASS: timer settato\n");
         if (res_sel > 0)
         {
             //ricezione nome file
@@ -95,10 +96,10 @@ int server_send_file_to_client(int socket)
                     serverSendErr(socket);
                     return (0);
                 }
-                if (long_output) printf("PASS: timer inizializzato\n");
+                if (long_output) printf("PASS: timer settato\n");
                 if (res_sel > 0)
                 {
-                    //ricezione (CR) LF
+                    //ricezione (CR)LF
                     read(socket, &nome_file[i + 1], 1);
                     if (nome_file[i + 1] != 10)
                     {
@@ -143,7 +144,7 @@ int server_send_file_to_client(int socket)
         return (0);
     }
     if (long_output) printf("PASS: file aperto\n");
-    //invio + O K
+    //invio "+OK"
     if (write(socket, "+OK\r\n", 5) != 5)
     {
         serverSendErr(socket);
@@ -160,7 +161,7 @@ int server_send_file_to_client(int socket)
         return (0);
     }
     if (long_output) printf("PASS: dimensione '%lu' Byte inviata\n", dimension);
-    //scansione-invio file
+    //loop scansione-invio file
     printf("- INVIO IN CORSO -\n");
     sent_byte = 0;
     while(sent_byte < dimension)
@@ -197,13 +198,15 @@ int server_send_file_to_client(int socket)
         strftime(buffer, sizeof(buffer), "%d.%m.%Y %H:%M:%S", timestamp_format);
         printf("PASS: timestamp '%s' inviato\n", buffer);
     }
+    //terminazione con successo
     return (1);
 }
 
 void serverSendErr(int socket_error)
 {
+    //messaggio errore
     printf("- ERRORE NELLA PROCEDURA -\n");
     if (write(socket_error, "-ERR\r\n", 6) != 6) return;
-    if (close(socket_error) != 0) return;
+    close(socket_error);
     return;
 }
