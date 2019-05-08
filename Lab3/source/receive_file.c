@@ -33,11 +33,11 @@ int client_receive_file_from_server(int socket, char *file_name)
     FD_SET(socket, &cset);
     tval.tv_sec = secTimer;
     tval.tv_usec = 0; 
-    if (send(socket, "GET ", 4, MSG_NOSIGNAL) != 4) return(-1);
+    if (write(socket, "GET ", 4) != 4) return(-1);
     if (long_output) printf("PASS: GET' ' inviato\n");
-    if (send(socket, file_name, strlen(file_name), MSG_NOSIGNAL) != strlen(file_name)) return(-1);
+    if (write(socket, file_name, strlen(file_name)) != strlen(file_name)) return(-1);
     if (long_output) printf("PASS: nome file inviato\n");
-    if (send(socket, "\r\n", 2, MSG_NOSIGNAL) != 2) return(-1);
+    if (write(socket, "\r\n", 2) != 2) return(-1);
     if (long_output) printf("PASS: CR LF inviato\n");
     printf("- RICHIESTO FILE '%s' -\n", file_name);
     res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
@@ -45,7 +45,7 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output) printf("PASS: timer inizializzato\n");
     if (res_sel > 0)
     {
-        if (recv(socket, buf5, 5, 0) != 5) return(-1);
+        if (read(socket, buf5, 5) != 5) return(-1);
     }
     else
     {
@@ -67,7 +67,7 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output) printf("PASS: timer inizializzato\n");
     if (res_sel > 0)
     {
-        if (recv(socket, buf4, 4, 0) != 4) return(-1);
+        if (read(socket, buf4, 4) != 4) return(-1);
     }
     else
     {
@@ -94,7 +94,7 @@ int client_receive_file_from_server(int socket, char *file_name)
         {
             for(i=0;i!=buffer_size;)
             {
-                if((j = recv(socket, buffer, (buffer_size-i), 0)) == -1) return(-1);
+                if((j = read(socket, buffer, (buffer_size-i))) == -1) return(-1);
                 i += j;
             }
             if (fwrite(buffer, 1, buffer_size, file) < 0) return(-1);
@@ -102,13 +102,17 @@ int client_receive_file_from_server(int socket, char *file_name)
         }
         else
         {
+            printf("aaa");
             for(i=0;i!=(dimension-received_byte);)
             {
-                if((j = recv(socket, buffer,(dimension-received_byte-i), 0)) == -1) return(-1);
+                printf("bbb");
+                if((j = read(socket, buffer,(dimension-received_byte-i))) == -1) return(-1);
                 i += j;
+                printf("--- %lu ---",i);
             }
             if (fwrite(buffer, 1, (dimension-received_byte), file) < 0) return(-1);
             received_byte += (dimension-received_byte);
+            printf("ccc");
         }
         printf("%lu %lu\n",j,received_byte);
     }
@@ -120,7 +124,7 @@ int client_receive_file_from_server(int socket, char *file_name)
     if (long_output) printf("PASS: timer inizializzato\n");
     if (res_sel > 0)
     {
-        if (recv(socket, buf4, 4, 0) != 4) return(-1);
+        if (read(socket, buf4, 4) != 4) return(-1);
     }
     else
     {

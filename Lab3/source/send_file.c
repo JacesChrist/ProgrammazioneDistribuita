@@ -48,7 +48,7 @@ int server_send_file_to_client(int socket)
     if (res_sel > 0)
     {
         //ricezione G E T ' '
-        if (recv(socket, buf4, 4, 0) != 4)
+        if (read(socket, buf4, 4) != 4)
         {
             close(socket);
             printf("- CONNESSIONE CHIUSA -\n");
@@ -82,7 +82,7 @@ int server_send_file_to_client(int socket)
         if (res_sel > 0)
         {
             //ricezione nome file
-            recv(socket, &nome_file[i], 1, 0);
+            read(socket, &nome_file[i], 1);
             if (nome_file[i] == 13)
             {
                 nome_file[i] = '\0';
@@ -98,7 +98,7 @@ int server_send_file_to_client(int socket)
                 if (res_sel > 0)
                 {
                     //ricezione (CR) LF
-                    recv(socket, &nome_file[i + 1], 1, 0);
+                    read(socket, &nome_file[i + 1], 1);
                     if (nome_file[i + 1] != 10)
                     {
                         serverSendErr(socket);
@@ -143,7 +143,7 @@ int server_send_file_to_client(int socket)
     }
     if (long_output) printf("PASS: file aperto\n");
     //invio + O K
-    if (send(socket, "+OK\r\n", 5, MSG_NOSIGNAL) != 5)
+    if (write(socket, "+OK\r\n", 5) != 5)
     {
         serverSendErr(socket);
         return (0);
@@ -153,7 +153,7 @@ int server_send_file_to_client(int socket)
     stat(nome_file, &stats);
     dimension = stats.st_size;
     size = htonl(dimension);
-    if (send(socket, &size, 4, MSG_NOSIGNAL) != 4)
+    if (write(socket, &size, 4) != 4)
     {
         serverSendErr(socket);
         return (0);
@@ -163,6 +163,7 @@ int server_send_file_to_client(int socket)
     printf("- INVIO IN CORSO -\n");
     for(sent_byte = 0;sent_byte != dimension;)
     {
+        memset(buffer, 0, buffer_size);
         if((dimension - sent_byte) >= buffer_size)
         {
             if(fread(buffer,1,buffer_size,file) != buffer_size)
@@ -172,7 +173,7 @@ int server_send_file_to_client(int socket)
             }
             for(i=0;i!=buffer_size;)
             {
-                if((j = send(socket, buffer, (buffer_size-i), MSG_NOSIGNAL)) == -1)
+                if((j = write(socket, buffer, (buffer_size-i))) == -1)
                 {
                     serverSendErr(socket);
                     return (-1);
@@ -190,7 +191,7 @@ int server_send_file_to_client(int socket)
             }
             for(i=0;i!=(dimension - sent_byte);)
             {
-                if((j = send(socket, buffer, (buffer_size-sent_byte-i), MSG_NOSIGNAL)) == -1)
+                if((j = write(socket, buffer, (dimension-sent_byte-i))) == -1)
                 {
                     serverSendErr(socket);
                     return (-1);
@@ -205,7 +206,7 @@ int server_send_file_to_client(int socket)
     //invio timestamp
     ultima_modifica = stats.st_mtime;
     timestamp = htonl(ultima_modifica);
-    if (send(socket, &timestamp, 4, MSG_NOSIGNAL) != 4)
+    if (write(socket, &timestamp, 4) != 4)
     {
         serverSendErr(socket);
         return (0);
@@ -224,7 +225,7 @@ int server_send_file_to_client(int socket)
 void serverSendErr(int socket_error)
 {
     printf("- ERRORE NELLA PROCEDURA -\n");
-    if (send(socket_error, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6) return;
+    if (write(socket_error, "-ERR\r\n", 6) != 6) return;
     if (close(socket_error) != 0) return;
     return;
 }
