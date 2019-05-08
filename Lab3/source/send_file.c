@@ -31,7 +31,6 @@ int server_send_file_to_client(int socket)
     uint32_t size, timestamp;
     struct stat stats;
     struct timeval tval;
-
     //inizializzazione timer
     fd_set cset;
     FD_ZERO(&cset);
@@ -42,7 +41,6 @@ int server_send_file_to_client(int socket)
     res_sel = select(FD_SETSIZE, &cset, NULL, NULL, &tval);
     if (res_sel == -1)
     {
-        if (long_output) printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
         serverSendErr(socket);
         return (0);
     }
@@ -52,11 +50,8 @@ int server_send_file_to_client(int socket)
         //ricezione G E T ' '
         if (recv(socket, buf4, 4, 0) != 4)
         {
-            if (close(socket) != 0) return(0);
+            close(socket);
             printf("- CONNESSIONE CHIUSA -\n");
-            //return (-2); //???
-            if (long_output) printf("ERROR: line %d - file '%s'\n", __LINE__ - 3, __FILE__);
-            serverSendErr(socket);
             return (0);
         }
         if (strncmp(buf4, "GET ", 4) != 0)
@@ -69,12 +64,8 @@ int server_send_file_to_client(int socket)
     else
     {
         printf("- TIMEOUT CONNESSIONE -\n");
-        if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
-        {
-            serverSendErr(socket);
-            return (0);
-        }
-        if (close(socket) != 0) return(0);
+        serverSendErr(socket);
+        close(socket);
         return (0);
     }
     i = 0;
@@ -119,12 +110,8 @@ int server_send_file_to_client(int socket)
                 else
                 {
                     printf("- TIMEOUT CONNESSIONE -\n");
-                    if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
-                    {
-                        serverSendErr(socket);
-                        return (0);
-                    }
-                    if (close(socket) != 0) return(0);
+                    serverSendErr(socket);
+                    close(socket);
                     return (0);
                 }
             }
@@ -141,12 +128,8 @@ int server_send_file_to_client(int socket)
         else
         {
             printf("- TIMEOUT CONNESSIONE -\n");
-            if (send(socket, "-ERR\r\n", 6, MSG_NOSIGNAL) != 6)
-            {
-                serverSendErr(socket);
-                return (0);
-            }
-            if (close(socket) != 0) return(0);
+            serverSendErr(socket);
+            close(socket);
             return (0);
         }
     }
@@ -170,7 +153,11 @@ int server_send_file_to_client(int socket)
     stat(nome_file, &stats);
     dimension = stats.st_size;
     size = htonl(dimension);
-    send(socket, &size, 4, MSG_NOSIGNAL);
+    if (send(socket, &size, 4, MSG_NOSIGNAL) != 4)
+    {
+        serverSendErr(socket);
+        return (0);
+    }
     if (long_output) printf("PASS: dimensione '%lu' Byte inviata\n", dimension);
     //scansione-invio file
     printf("- INVIO IN CORSO -\n");
@@ -196,7 +183,7 @@ int server_send_file_to_client(int socket)
         }
         else
         {
-            if(fread(buf,1,(dimension - sent_byte),file) != (dimension - sent_byte))
+            if(fread(buffer,1,(dimension - sent_byte),file) != (dimension - sent_byte))
             {
                 serverSendErr(socket);
                 return (0);

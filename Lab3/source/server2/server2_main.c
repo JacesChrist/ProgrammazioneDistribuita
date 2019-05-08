@@ -20,12 +20,13 @@ char *prog_name;
 
 int buffer_size = 1500;
 int long_output = 1;
+int fork_counter;
 
 int main(int argc, char *argv[]) //in *argv: nomeProgramma porta
 {
 	signal(SIGCHLD,zombie_hunter);
 
-	int socket_passive, socket_son,i,pid_son,fork_counter;
+	int socket_passive, socket_son,i,pid_son;
 	struct sockaddr_in server_address;
 	socklen_t address_length;
 

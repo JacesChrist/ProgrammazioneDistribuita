@@ -50,13 +50,13 @@ int client_receive_file_from_server(int socket, char *file_name)
     else
     {
         printf("- TIMEOUT CONNESSIONE -\n");
-        if (close(socket) != 0) return(-1);
+        close(socket);
         return (-1);
     }
     if (buf5[0] == '-')
     {
         printf("- ERRORE RICHIESTA -\n");
-        if (close(socket) != 0) return(-1);
+        close(socket);
         exit(1);
     }
     if (strncmp(buf5, "+OK\r\n", 5) != 0) return(-1);
@@ -72,13 +72,13 @@ int client_receive_file_from_server(int socket, char *file_name)
     else
     {
         printf("- TIMEOUT CONNESSIONE -\n");
-        if (close(socket) != 0) return(-1);
+        close(socket);
         return (-1);
     }
     if (buf4[0] == '-')
     {
         printf("- ERRORE RICHIESTA -\n");
-        if (close(socket) != 0) return(-1);
+        close(socket);
         exit(1);
     }
     dimension = ntohl((*(uint32_t *)buf4));
@@ -89,23 +89,19 @@ int client_receive_file_from_server(int socket, char *file_name)
     printf("- RICEZIONE IN CORSO -\n");
     for(received_byte = 0;received_byte != dimension;)
     {
+        memset(buffer, 0, buffer_size);
         if((dimension-received_byte) >= buffer_size)
         {
             for(i=0;i!=buffer_size;)
             {
                 if((j = recv(socket, buffer, (buffer_size-i), 0)) == -1) return(-1);
                 i += j;
-                printf("bbb");
-                fflush(stdout);
             }
             if (fwrite(buffer, 1, buffer_size, file) < 0) return(-1);
             received_byte += buffer_size;
-            printf("%lu %lu\n",j,received_byte);
         }
         else
         {
-            printf("aaa");
-            fflush(stdout);
             for(i=0;i!=(dimension-received_byte);)
             {
                 if((j = recv(socket, buffer,(dimension-received_byte-i), 0)) == -1) return(-1);
@@ -114,6 +110,7 @@ int client_receive_file_from_server(int socket, char *file_name)
             if (fwrite(buffer, 1, (dimension-received_byte), file) < 0) return(-1);
             received_byte += (dimension-received_byte);
         }
+        printf("%lu %lu\n",j,received_byte);
     }
     if (fclose(file) != 0) return(-1);
     if (long_output) printf("PASS: file scritto\n");
@@ -128,13 +125,13 @@ int client_receive_file_from_server(int socket, char *file_name)
     else
     {
         printf("- TIMEOUT CONNESSIONE -\n");
-        if (close(socket) != 0) return(-1);
+        close(socket);
         return (-1);
     }
     if (buf4[0] == '-')
     {
         printf("- ERRORE RICHIESTA -\n");
-        if (close(socket) != 0) return(-1);
+        close(socket);
         exit(1);
     }
     if (long_output) printf("PASS: timestamp ricevuto\n");
